@@ -15,10 +15,16 @@ editor_options:
   chunk_output_type: console
 ---
 
+First thing's first, I need to set the working directory:
+```{r Set the working directory}
+setwd("F:/git/cuny_msds/data606-statistics-and-probability-for-data-analytics/labs/lab-1")
+```
+
 ```{r global_options, include=FALSE}
 knitr::opts_chunk$set(eval = TRUE, message = FALSE, warning = FALSE)
 library(tidyverse)
 library(openintro)
+
 ```
 
 
@@ -106,7 +112,7 @@ The Arbuthnot data set refers to the work of Dr. John Arbuthnot, an 18<sup>th</s
 arbuthnot
 ```
 
-However, printing the whole dataset in the console is not that useful. One advantage of RStudio is that it comes with a built-in data viewer. Click on the name `arbuthnot` in the *Environment* pane (upper right window) that lists the objects in your environment. This will bring up an alternative display of the data set in the *Data Viewer* (upper left window). You can close the data viewer by clicking on the `x` in the upper left hand corner.
+However, printing the whole data set in the console is not that useful. One advantage of RStudio is that it comes with a built-in data viewer. Click on the name `arbuthnot` in the *Environment* pane (upper right window) that lists the objects in your environment. This will bring up an alternative display of the data set in the *Data Viewer* (upper left window). You can close the data viewer by clicking on the `x` in the upper left hand corner.
 
 What you should see are four columns of numbers, each row representing a different year: the first entry in each row is simply the row number (an index we can use to access the data from individual years if we want), the second is the year, and the third and fourth are the numbers of boys and girls baptized that year, respectively. Use the scrollbar on the right side of the console window to examine the complete data set.
 
@@ -126,7 +132,7 @@ This command should output the following
 glimpse(arbuthnot)
 ```
 
-We can see that there are 82 observations and 3 variables in this dataset. The variable names are `year`, `boys`, and `girls`. At this point, you might notice that many of the commands in R look a  lot like functions from math class; that is, invoking R commands means supplying a function with some number of arguments. The `glimpse` command, for example, took a single argument, the name of a data frame. 
+We can see that there are 82 observations and 3 variables in this data set. The variable names are `year`, `boys`, and `girls`. At this point, you might notice that many of the commands in R look a  lot like functions from math class; that is, invoking R commands means supplying a function with some number of arguments. The `glimpse` command, for example, took a single argument, the name of a data frame. 
 
 ## Some Exploration
 
@@ -146,6 +152,7 @@ This command will only show the number of boys baptized each year. The dollar si
 ```{r view-girls}
 arbuthnot$girls
 ```
+
 **End of your answer**
 
 Notice that the way R has printed these data is different. When we looked at the complete data frame, we saw 82 rows, one on each line of the display. These data are no longer structured in a table with other variables, so they are displayed  one right after another. Objects that print out in this way are called *vectors*; they represent a set of numbers. R has added numbers in [brackets] along the left side of the printout to indicate locations within the vector. For example, 5218  follows `[1]`, indicating that `5218` is the first entry in the vector. And if `[43]` starts a line, then that would mean the first number on that line would represent the 43rd entry in the vector.
@@ -165,8 +172,8 @@ We use the `ggplot()` function to build plots. If you run the plotting code in y
 
 With `ggplot()`:
 
-- The first argument is always the dataset. 
-- Next, you provide the variables from the dataset to be assigned to `aes`thetic elements of the plot, e.g. the x and the y axes. 
+- The first argument is always the data set. 
+- Next, you provide the variables from the data set to be assigned to `aes`thetic elements of the plot, e.g. the x and the y axes. 
 - Finally, you use another layer, separated by a `+` to specify the `geom`etric object for the plot. Since we want to scatterplot, we use `geom_point()`.
 
 For instance, if you wanted to visualize the above plot using a line graph, you would replace `geom_point()` with `geom_line()`.
@@ -192,19 +199,23 @@ Notice that the help file replaces the plot in the lower right panel. You can to
    interpretation.)
 
 **Insert your answer here**
-```{thoughts - girls baptized trend over the years}
+
+```{r thoughts - girls baptized trend over the years}
 girls_graph <- ggplot(data = arbuthnot, aes(x = year, y = girls)) + geom_point()
+girls_graph
 ```
 
 There is a significant drop in baptisms starting in 1640 through around 1665. Looking online, it looks like the beginning of this period coincides with the English Civil Wars (1642 - 1651). From . Quickly after the 1665, the baptisms for girls returns back to levels that seem to visually align with the trend before the drop.
 
-```{thoughts - adding a vertical line at 1642 and 1665}
-girls_graph + geom_vline(xintercept = 1642) + geom_vline(xintercept = 1651)
+```{r thoughts - adding a vertical line at 1642 and 1665}
+girls_graph + 
+  geom_vline(xintercept = 1642) + 
+  geom_vline(xintercept = 1651)
 ```
 
 The English Civil Wars is a pretty convenient event to explain some of the reduction of births, but the number is sustained at a lower level. From what I found through [**english-heritage.org.uk**](https://www.english-heritage.org.uk/learn/histories/the-english-civil-wars-history-and-stories/#:~:text=The%20human%20cost%20of%20the,were%20complex%20and%20many%2Dlayered.), it seems that 4.5% of the population was lost, so I'm expecting that there would be a pretty similar drop between the year before the war and the year the war ended.
 
-```{thoughts - testing out a theory that the pre war christenings (1641) and post war christinings (1665) would be around a 4.5% drop relative to the 1641 births}
+```{r thoughts - testing out a theory that the pre war christenings (1641) and post war christinings (1665) would be around a 4.5% drop relative to the 1641 births}
 pre_war_girls = arbuthnot[arbuthnot$year == 1641,]$girls
 post_war_girls = arbuthnot[arbuthnot$year == 1665,]$girls
 
@@ -212,7 +223,7 @@ print(100*(pre_war_girls - post_war_girls)/pre_war_girls)
 
 ```
 
-6.5% is a bit more than I anticipated but that seems to be the decline.
+6.5% is a bit more than I anticipated but that is the difference in girls births between those years.
 
 **End of your answer**
 
@@ -246,13 +257,13 @@ The `%>%` operator is called the **piping** operator. It takes the output of the
 <div id="boxedtext">
 **A note on piping: ** Note that we can read these two lines of code as the following: 
 
-*"Take the `arbuthnot` dataset and **pipe** it into the `mutate` function. Mutate the `arbuthnot` data set by creating a new variable called `total` that is the sum of the variables called `boys` and `girls`. Then assign the resulting dataset to the object called `arbuthnot`, i.e. overwrite the old `arbuthnot` dataset with the new one containing the new variable."*
+*"Take the `arbuthnot` data set and **pipe** it into the `mutate` function. Mutate the `arbuthnot` data set by creating a new variable called `total` that is the sum of the variables called `boys` and `girls`. Then assign the resulting data set to the object called `arbuthnot`, i.e. overwrite the old `arbuthnot` data set with the new one containing the new variable."*
 
 This is equivalent to going through each row and adding up the `boys` and `girls` counts for that year and recording that value in a new column called `total`.
 </div>
 
 <div id="boxedtext">
-**Where is the new variable? ** When you make changes to variables in your dataset, click on the name of the dataset again to update it in the data viewer.
+**Where is the new variable? ** When you make changes to variables in your data set, click on the name of the data set again to update it in the data viewer.
 </div>
 
 You'll see that there is now a new column called `total` that has been tacked onto the data frame. 
@@ -284,7 +295,7 @@ You can also compute the proportion of newborns that are boys in 1629
 5218 / (5218 + 4683)
 ```
 
-or you can compute this for all years simultaneously and append it to the dataset
+or you can compute this for all years simultaneously and append it to the data set
 
 ```{r calc-prop-boys-vars}
 arbuthnot <- arbuthnot %>%
@@ -299,7 +310,7 @@ Note that we are using the new `total` variable we created earlier in our calcul
 
 It seems that boy ratio is the proportion of boys born compared to the total population. So I'll be graphing that as the y-axis and year on the x-axis
 
-```{generating a plot of the proporting of boys born over time}
+```{r generating a plot of the proporting of boys born over time}
 boy_proportion_graph <- ggplot(data = arbuthnot, aes(x = year, y = boy_ratio)) + 
   geom_line()
 boy_proportion_graph
@@ -307,11 +318,12 @@ boy_proportion_graph
 
 Initially, the graph looks like it has a lot of "noise" being that there are pretty significant peaks and valleys. But, looking a little closer, it seems that the majority of the values remain between 50% and 54%, which is relatively tight of a band.
 
-```{regenerating the graph with y limits being 40% and 60%}
-boy_proportion_graph + ylim(.4, .6)
+```{r regenerating the graph with y limits being .40 and .60}
+boy_proportion_graph + 
+  ylim(.4, .6)
 ```
 
-Revisiting the the graph visualized this way it seems quite a bit more stable. Perhaps pretty important is that there is no year where girls had more births than boys.
+Revisiting the the graph visualized this way it seems quite a bit more stable. It does stand out that there is no year where girls had more births than boys.
 
 **End of your answer**
 
@@ -351,28 +363,24 @@ arbuthnot %>%
     data frame? What are the variable (column) names?
 
 **Insert your answer here**
-Firstly, let's see the first few rows of data to inspect the dataset:
-```{get year spread of the present dataset}
+
+Firstly, let's see the first few rows of data to inspect the data set:
+```{r get year spread of the present data set}
 head(present)
 ```
 
-From the head, we can see that the columns in this dataset are:
-  - year
-  - boys
-  - girls
-  
-similar to the Arbuthnot data set.
+From the head, we can see that the columns in this data set are *year*, *boys*, and *girls*. This is similar to the Arbuthnot data set.
 
-To see the size of the dataset, we can use the glimpse function as before:
+To see the size of the data set, we can use the glimpse function as before:
 
-```{Seeing the size of the dataset}
+```{r Seeing the size of the data set}
 glimpse(present)
 ```
 
 With the glimpse from above, we can see that there are 63 rows (corresponding to years) and 3 columns. 
 
-To get the years included in this dataset, I'll use the summarize function that was just introduced replacing min(boys) and max(boys) with years.
-```{summarizing the present dataset}
+To get the years included in this data set, I'll use the summarize function that was just introduced replacing min(boys) and max(boys) with years.
+```{r summarizing the present data set}
 present %>%
   summarize(min = min(year), max = max(year))
 ```
@@ -383,23 +391,21 @@ So in summary:
 
   1) The data starts in 1940 and ends in 2002
   2) The data set has 63 rows and 3 columns
-  3) The data set columns are:
-    - year
-    - boys
-    - girls
+  3) The data set columns are *year*, *boys*, and *girls*
 
 **End of your answer**
 
 1.  How do these counts compare to Arbuthnot's? Are they of a similar magnitude?
 
 **Insert your answer here**
-In counts, this dataset has the same number of columns but fewer years being observed, i.e. fewer rows.
 
-Regarding the magnitude, let's use a plot to answer this question. We will plot both of these data sets. Since our question is simply to answer to the magnitude, let's graph both of these datasets using the index as the x axis. This would make it so that we can pretty easily see how large the gap between the data sets are.
+In counts, this data set has the same number of columns but fewer years being observed, i.e. fewer rows. Arbuthnot's dataset had 82 observations while the present dataset had 63.
+
+Regarding the magnitude, let's use a plot to answer this question. We will plot both of these data sets. Since our question is simply to answer to the magnitude, let's graph both of these data sets using the index as the x-axis. This would make it so that we can pretty easily see how large the gap between the data sets are.
 
 To do this, we will first need the total number of births added as a column on the present data set:
 
-```{calculating total for the present dataset}
+```{r calculating total for the present data set}
 present <- present %>%
   mutate(total = boys + girls)
 
@@ -408,7 +414,7 @@ head(present)
 
 Now we can graph these data sets on top of each other:
 
-```{plotting both datasets on one chart with the index as the x axis}
+```{r plotting both data sets on one chart with the index as the x-axis}
 present_vs_arbuthnot = ggplot() + 
   geom_line(data = present, aes(x = as.numeric(row.names(present)), y = total), color = 'blue') + 
   geom_line(data = arbuthnot, aes(x = as.numeric(row.names(arbuthnot)), y = total), color = 'red')
@@ -416,15 +422,17 @@ present_vs_arbuthnot = ggplot() +
 present_vs_arbuthnot
 ```
 
-Let's be honest. If you had asked me prior to looking at data if the magnitude of births from London in the 17th century to the **total number of births in the USA in the 19th century** I would have instinctively known it wasn't (although this was good practice). The graph generated very much so supports this. The red line (representing Arbuthnot's data) barely registers on when sharing a scale with the total births in the USA in the 19th century.
+Let's be honest. If you had asked me prior to looking at data if the magnitude of births from London in the 17th century was similar to the **total number of births in the USA in the 19th century**, I would have instinctively known it wasn't (although this was good practice). The graph generated very much so supports this. The red line (representing Arbuthnot's data) barely registers when sharing a scale with the total births in the USA in the 19th century.
 
 Now, looking for a specific answer to the question of how large the magnitude is:
 
-```{calculating how large the magnitude of difference is}
+```{r calculating how large the magnitude of difference is}
 max_arbuthnot = max(arbuthnot$total)
 min_present = min(present$total)
 
 magnitiude_ratio = min_present/max_arbuthnot
+
+magnitiude_ratio
 
 ```
 
@@ -438,8 +446,9 @@ From that code block above, the magnitude difference between the year with the m
     able to reuse your code from Exercise 3 above, just replace the dataframe name.
 
 **Insert your answer here**
+
 Let's first calculate the boy ratio:
-```{calculating the boy ratio}
+```{r calculating the boy ratio}
 present <- present %>%
   mutate(boy_ratio = boys/total)
 
@@ -447,7 +456,7 @@ head(present)
 ```
 
 Now, let's graph the proportion of boys over time for the present data set:
-```{graphing the the proportion of boys for the present data set}
+```{r graphing the the proportion of boys for the present data set}
 present_boy_ratio <- ggplot(data = present, aes(x = year, y = boy_ratio)) + 
   geom_point() +
   ylim(.4, .6)
@@ -455,11 +464,11 @@ present_boy_ratio <- ggplot(data = present, aes(x = year, y = boy_ratio)) +
 present_boy_ratio
 ```
 
-This seems to also align with Arbuthnot's observation. For every year in the present dataset, we can see that boys consistently have more births than girls.
+This seems to also align with Arbuthnot's observation. For every year in the present data set, we can see that boys consistently have more births than girls.
 
 To see this with Arbuthnot's data, let's plot a graph where we can see both of these:
 
-```{plotting both datasets proportion of boy births on the same graph.}
+```{r plotting both data sets proportion of boy births on the same graph.}
 present_vs_arbuthnot = ggplot() + 
   geom_point(data = present, aes(x = as.numeric(row.names(present)), y = boy_ratio), color = 'blue') + 
   geom_point(data = arbuthnot, aes(x = as.numeric(row.names(arbuthnot)), y = boy_ratio), color = 'red') +
@@ -468,9 +477,9 @@ present_vs_arbuthnot = ggplot() +
 present_vs_arbuthnot
 ```
 
-Now this is pretty interesting! With more dataset,s we can see that the present dataset seems to converge much closer to a single number. Assuming that there's a specific probability that a birth would be a boy or girl, this would make a lot of sense as the more observations would converge towards to the probability of an event. Let's wrap up here by averaging the boy proportion in the present data set:
+Now this is pretty interesting! With more data set,s we can see that the present data set seems to converge much closer to a single number. Assuming that there's a specific probability that a birth would be a boy or girl, this would make a lot of sense as the more observations would converge towards to the probability of an event. Let's wrap up here by averaging the boy proportion in the present data set:
 
-```{getting the average boy proporition in the present data set}
+```{r getting the average boy proporition in the present data set}
 mean(present$boy_ratio)
 ```
 
@@ -480,7 +489,7 @@ According to that cell, the mean of boy_ratios is 0.512516. So, it's slightly mo
 
 1.  In what year did we see the most total number of births in the U.S.? *Hint:*
     First calculate the totals and save it as a new variable. Then, sort your
-    dataset in descending order based on the total column. You can do this
+    data set in descending order based on the total column. You can do this
     interactively in the data viewer by clicking on the arrows next to the 
     variable names. To include the sorted result in your report you will need 
     to use two new functions: `arrange` (for sorting). We can arrange the data 
@@ -493,13 +502,16 @@ present %>%
 ```
 
 **Insert your answer here**
-I appreciate the suggestion, but I prefer to do it in the following way:
-  1) Calculate the total
-  2) Filter the dataset to the entry with the max total
-  
-With those 2 steps, we can reliabily get the max in the dataset and present it
 
-```{getting the year in the present dataset with the max births}
+I appreciate the suggestion, but I prefer to do it in the following way:
+  
+  1) Get the maximum total across the data set
+  
+  2) Filter the data set to the entry with the max total
+  
+With those 2 steps, we can reliably get the max in the data set and present it
+
+```{r getting the year in the present data set with the max births}
 present <- present %>%
   mutate(total = boys + girls)
 
@@ -509,6 +521,7 @@ present[(present$total == max_total),]
 ```
 
 From that code block above, we can see that the year with the max births was 1961.
+
 **End of your answer**
 
 These data come from reports by the Centers for Disease Control. 
