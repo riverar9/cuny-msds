@@ -17,7 +17,7 @@ editor_options:
 
 First thing's first, I need to set the working directory:
 ```{r Set the working directory}
-setwd("F:/git/cuny_msds/data606-statistics-and-probability-for-data-analytics/labs/lab-1")
+setwd("F:/git/cuny-msds/data606/labs/lab-2")
 ```
 
 ```{r global-options, include=FALSE}
@@ -127,6 +127,10 @@ ggplot(data = nycflights, aes(x = dep_delay)) +
 
 **Insert your answer here**
 
+By showing a bin size of 15 and 150 it's pretty clear that the size of the bins can hide some critical information about the distribution of data. When looking at the graph with a bin size of 15 we can see that the vast majority of flights depart without a delay (x=0) but there is a still a significant amount of flights in the bins adjacent to it. Contrasting with the graph where the bin size is 150, a substantial portion of flights are aggregated into that first bin, illustrating the role that bin size has on presenting or concealing features within the data set.
+
+**End of your answer**
+
 If you want to visualize only on delays of flights headed to Los Angeles, you need to first `filter` the data for flights with that destination (`dest == "LAX"`) and then make a histogram of the departure delays of only those flights.
 
 ```{r lax-flights-hist}
@@ -192,11 +196,57 @@ Note that you can separate the conditions using commas if you want flights that 
 
 **Insert your answer here**
 
+```{r sfo_feb_flights}
+sfo_feb_flights <- nycflights %>%
+  filter(dest=="SFO", month == 2)
+
+sfo_feb_flights %>%
+  summarise(
+    n = n()
+  )
+
+nrow(sfo_feb_flights)
+
+```
+
+From the cell above, we can see that there are 68 flights in February 2013 that went from any NYC airport to SFO.
+
+**End of your answer**
+
 3.  Describe the distribution of the **arrival** delays of these flights using a 
     histogram and appropriate summary statistics. **Hint:** The summary 
     statistics you use should depend on the shape of the distribution.
     
 **Insert your answer here**
+
+```{r arrival distirbution}
+ggplot(data = nycflights, aes(x = arr_delay)) +
+  geom_histogram(binwidth = 15)
+```
+
+```{r re-plotting departure distribution}
+ggplot(data = nycflights, aes(x = dep_delay)) +
+  geom_histogram(binwidth = 15)
+```
+
+Looking at the tail of the distribution of arrival delays for all flights in the data set, I can see that there are longer arrival delays than departure delays in the bins further on the x-axis. Additionally, the modal bin (the bin with the most entries) for dep_delay is 0 while the modal bin for arr_delay is negative. So it looks like the spread is a bit greater with the arr_delay. Let's more rigoriously define this by using summarise:
+
+```{r arrival_summary}
+nycflights %>%
+  summarise(
+    mean_dd   = mean(dep_delay), 
+    mean_ad   = mean(arr_delay),
+    median_dd = median(dep_delay), 
+    median_ad = median(arr_delay),
+    sd_dd     = sd(dep_delay),
+    sd_ad     = sd(arr_delay)
+    )
+    
+```
+
+When looking at this data, we can see that the mean arr_delay and median arr_delay are lower than their respective dep_delays (12.7 - 7.1 = 5.6 and (-2) - (-5) = 3, respectively).  When looking at the standard deviation, we can see that the arr_delay is more dispersed from the mean than dep_delays (40.4 vs 44.7) which aligns with the visual finding we've had when comparing the histograms of arr_delay and dep_delay.
+
+**End of your answer**
 
 Another useful technique is quickly calculating summary statistics for various groups in your data frame. For example, we can modify the above command using the `group_by` function to get the same summary stats for each origin airport:
 
@@ -214,6 +264,19 @@ Here, we first grouped the data by `origin` and then calculated the summary stat
 
 **Insert your answer here**
 
+```{r summarizing data for question 4}
+sfo_feb_flights %>%
+  group_by(carrier) %>%
+  summarise(
+    median_ad = median(arr_delay),
+    iqr_ad    = IQR(arr_delay)
+  )
+```
+
+According to the summary from the code above, there is a tie between both Delta and United Airlines. Both of these airlines have an interquartile range of 22 minutes. Interestingly enough, their median arrival delay is -15 and -10 minutes, respectively. So half of their flights are at least 10 minutes early.
+
+**End of your answer**
+
 ### Departure delays by month
 
 Which month would you expect to have the highest average delay departing from an NYC airport?
@@ -228,8 +291,14 @@ Let's think about how you could answer this question:
 ```{r mean-dep-delay-months}
 nycflights %>%
   group_by(month) %>%
-  summarise(mean_dd = mean(dep_delay)) %>%
-  arrange(desc(mean_dd))
+  summarise(
+    mean_dd   = mean(dep_delay),
+    median_dd = median(dep_delay),
+    max_dd    = max(dep_delay)
+  ) %>%
+  arrange(
+    desc(mean_dd)
+  )
 ```
 
 5.  Suppose you really dislike departure delays and you want to schedule 
@@ -239,6 +308,14 @@ nycflights %>%
     What are the pros and cons of these two choices?
 
 **Insert your answer here**
+
+Because the mean is calculated using every data point it is a comprehensive view of the entire group and it will show any large changes. Although, this is also it's weakness as it is very sensitive to outliers and doesn't represent typical values in the dataset. For example, the maximum departure delay is 1301 minutes (almost a whole day) which greatly impacts the mean and would drastically skew the data if it was the only delay for that given month.
+
+On the other hand, the median is robust to these outliers and provides the typical value within the data set. If the data spread of values is large, the median is a good measure to provide something meaningful. Although, the median will not provide any information about the magnitude of entries beyond the middle point which could mean that an atypical value can be incredibly far from the middle.
+
+Choosing between these two to minimize the chances of a delay would come down to your risk tolerance and whether the duraiton of the delay matters more than the chances of being affected by a delay.
+
+**End of your answer**
 
 ### On time departure rate for NYC airports
 
@@ -282,6 +359,12 @@ ggplot(data = nycflights, aes(x = origin, fill = dep_type)) +
 
 **Insert your answer here**
 
+If I had lounge access and wanted to lounge around for as long as possible, I would pick EWR as that airport has the worse on time rate.
+
+Otherwise (and realistically) I'll pick LGA as LGA has an on time rate of 72.8% which is much greater than the others. This can also be visually seen using the segmented bar plot. By noticing that the count of "on time" departures is similar, we can simply choose the airport with the least amount of flights.
+
+**End of your answer**
+
 * * *
 
 ## More Practice
@@ -293,11 +376,51 @@ ggplot(data = nycflights, aes(x = origin, fill = dep_type)) +
     
 **Insert your answer here**
 
+Using the mutate function:
+
+```{r calculate avg_speed}
+
+nycflights <- nycflights %>%
+  mutate(
+    avg_speed = (60*distance / air_time)
+  )
+
+nycflights %>%
+  summarise(
+    mean_mph    = mean(avg_speed),
+    median_mph  = median(avg_speed)
+  )
+
+```
+
+With that we can see that the mean avg_speed is 394 MPH and the median avg_speed is 404 MPH
+
+**End of your answer**
+
 8.  Make a scatterplot of `avg_speed` vs. `distance`. Describe the relationship
     between average speed and distance.
     **Hint:** Use `geom_point()`.
 
 **Insert your answer here**
+
+Creating the plot:
+```{r creating avg_speed vs distance plot}
+
+ggplot(data = nycflights, aes(x = avg_speed, y = distance)) +
+  geom_point()
+
+```
+
+Looking at the graph, it seems that the trend is that as distance increases, the average speed increases until it they seem to converge to a maximum value. That being said, the bands within each distance seems to be pretty wide although the trend seems to be upwards.
+
+```{r lets look at that outlier}
+nycflights %>%
+  filter(avg_speed > 600)
+```
+
+There is an outlier on a flight to Atlanta that was really going fast. The US Standard Atmosphere tables show that the speed of sound at this elevation (35000) is 660 MPH, suggesting that this flight had bad data or there was an incredibly strong tailwind.
+
+**End of your answer**
 
 9.  Replicate the following plot. **Hint:** The data frame plotted only
     contains flights from American Airlines, Delta Airlines, and United
@@ -313,3 +436,45 @@ ggplot(data = dl_aa_ua, aes(x = dep_delay, y = arr_delay, color = carrier)) +
 ```
 
 **Insert your answer here**
+
+```{r recreate the plot}
+big_3_flights <- nycflights %>%
+  filter(
+    carrier == "AA" |
+    carrier == "UA" |
+    carrier == "DL"
+  )
+
+big_3_plot = ggplot(
+  data = big_3_flights,
+  aes(x=dep_delay, y=arr_delay, color=carrier)
+) +
+  geom_point()
+
+big_3_plot
+
+```
+
+This graph doesn't really help much as it has a lot of values outside of the range we're interested in. I'll be setting an xlimit and ylimit so that we can zoom into the range we care about and adding a line at y=0 so it's easier to visualize.
+
+```{r zooming into the range we like}
+zoomed_big_3_plot = big_3_plot +
+  xlim(-25,100) +
+  ylim(-100, 200) + 
+  geom_hline(yintercept=0)
+
+zoomed_big_3_plot
+```
+
+Zooming in, we can see that there's still a huge spread and it seems like a lot of flights which even departed early are delayed on arrival. A scatter plot with this many data points doesn't really help to understand how many observations are concentrated in that area. But I would say that if your flight departed 5 minutes early then you have a great chance to arrive on time.
+
+Let's put a vertical line on that x=-5
+
+```{r with a horizontal line}
+zoomed_big_3_plot + 
+  geom_vline(xintercept=-5)
+```
+
+Looking at that bottom left quadrant, we can definitely see that the majority of flights that depart 5 minutes early arrive on time or early, but this would need to be more rigerously analyzed to be meaningful.
+
+**End of your answer**
