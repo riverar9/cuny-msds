@@ -17,7 +17,7 @@ editor_options:
 
 First thing's first, I need to set the working directory:
 ```{r Set the working directory}
-setwd("F:/git/cuny_msds/data606-statistics-and-probability-for-data-analytics/labs/lab-1")
+setwd("F:/git/cuny-msds/data606/labs/lab-1")
 ```
 
 ```{r global_options, include=FALSE}
