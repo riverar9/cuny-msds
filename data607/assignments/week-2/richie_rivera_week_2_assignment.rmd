@@ -7,7 +7,7 @@ output:
 ---
 
 # Overview
-In this assignment, we will be taking data that I've collected from a few friends and uploading it to a sql table. To make it harder for myself, I'm using GCP BigQuery for my table. I've chosen BigQuery because it has a relatively generous free tier. I am also deciding to normalize my data a little bit.
+In this assignment, we will be taking data that I've collected from a few friends and uploading it to a SQL table. To make it harder for myself, I'm using GCP BigQuery for my table. I've chosen BigQuery because it has a relatively generous free tier. I am also deciding to normalize my data a little bit.
 
 First we will import the libraries we need. We are assuming that these are installed.
 
@@ -100,12 +100,13 @@ ratings_df <- subset(
 
 ## 4. Loading the data into BigQuery
 
-First we will need to authenticate
+First we will need to authenticate:
 ```{r}
 bigrquery::bq_auth(path = path_to_bq_creds)
 ```
 
-First the users table
+Now that we've authenticated, we will upload the users table
+
 ```{r}
 users_table <- bq_table(
   project = project_id,
@@ -169,3 +170,5 @@ bq_table_upload(
 ```
 
 # Conclusion
+
+With the data collected from our 5 wonderful volunteers, we were able to normalize the data into reference tables and also use the bigrquery package to upload it to BigQuery. This was my first time using R to do so making this something new for me!
