@@ -3,3 +3,4 @@
 *.zip
 *.csv
 data_*
+*auth.json
