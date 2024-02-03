@@ -32,7 +32,7 @@ We will be using the '202312-citibike-tripdata.csv.zip' dataset.
 6. Repeat step 4, but use the ending location rather than the starting location
 
 ## 1. Downloading the dataset to the working directory
-```{r}
+```{r Downloading the dataset to the working directory}
 file_name       <- "202312-citibike-tripdata.csv"
 
 zip_file_name   <- paste(file_name, ".zip", sep="")
@@ -44,14 +44,14 @@ download.file(download_url, dest=zip_file_name, mode="wb")
 
 ## 2. Unzipping the downloaded dataset into the same directory
 
-```{r}
+```{r Unzipping the downloaded dataset into the same directory}
 unzipped_folder = "data_citibike_rides"
 unzip(zip_file_name, exdir=unzipped_folder)
 ```
 
 ## 3. Read in the data as an R dataframe
 We'll do so by creating the csv path with the variables established above and then display the first few rows using the head() function.
-```{r}
+```{r Read in the data as an R dataframe}
 csv_path = paste(unzipped_folder, "/", file_name, sep="")
 
 citi_df = read.csv(csv_path)
@@ -69,7 +69,7 @@ Once that's done, we will only keep the following columns:
 
 - end_station_name
 
-```{r}
+```{r Create an R dataframe with the subset of the rows which are e-bikes}
 filtered_df <- subset(
     citi_df
     , rideable_type == "electric_bike"
@@ -80,7 +80,7 @@ filtered_df <- subset(
 ## 5. With filtered_df, we will look at the most common starting station
 To do so, we'll summarize the data grouping by start_station_name and counting the number of times each station shows up.
 
-```{r}
+```{r With filtered_df, we will look at the most common starting station}
 library(dplyr)
  
 filtered_df %>%
@@ -94,7 +94,7 @@ From the block above, we can see that '7 Ave & Central Park South' was the most 
 
 ## 6. With fitlered_df, we will look at the most common ending location
 
-```{r}
+```{r With fitlered_df, we will look at the most common ending location}
 filtered_df %>%
   group_by(end_station_name) %>%
   summarize(Count=n()) %>%
