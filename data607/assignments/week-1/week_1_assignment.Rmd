@@ -1,7 +1,9 @@
 ---
 title: "Data 607 - Assignment 1"
 author: "Richie R."
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 # Overview
