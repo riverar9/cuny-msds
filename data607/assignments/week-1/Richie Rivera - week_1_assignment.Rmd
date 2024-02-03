@@ -2,15 +2,14 @@
 title: "Data 607 - Assignment 1"
 author: "Richie Rivera"
 output:
-  pdf_document: default
   html_document:
     includes:
-      in_header: header.html
     css: ./lab.css
     highlight: pygments
     theme: cerulean
     toc: true
     toc_float: true
+  pdf_document: default
 editor_options: 
   chunk_output_type: console
 ---
