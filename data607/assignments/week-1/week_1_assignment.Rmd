@@ -1,6 +1,6 @@
 ---
 title: "Data 607 - Assignment 1"
-author: "Richie Rivera"
+author: "Richie R."
 output:
   html_document:
     includes:
