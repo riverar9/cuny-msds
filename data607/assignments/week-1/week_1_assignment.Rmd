@@ -1,17 +1,7 @@
 ---
 title: "Data 607 - Assignment 1"
 author: "Richie R."
-output:
-  html_document:
-    includes:
-    css: ./lab.css
-    highlight: pygments
-    theme: cerulean
-    toc: true
-    toc_float: true
-  pdf_document: default
-editor_options: 
-  chunk_output_type: console
+output: html_document
 ---
 
 # Overview
