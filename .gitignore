@@ -1,2 +1,6 @@
 .Rhistory
 .RData
+*.zip
+*.csv
+data_*
+*auth.json
