@@ -1,6 +1,6 @@
 ---
 title: "Probability"
-author: ""
+author: "Richie Rivera"
 output:
   pdf_document: default
   html_document:
