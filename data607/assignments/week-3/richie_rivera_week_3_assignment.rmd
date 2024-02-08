@@ -2,6 +2,8 @@
 title: "Data 607 - Assignment 3"
 author: "Richie R."
 output:
+  html_document:
+    df_print: paged
   pdf_document: default
 ---
 
@@ -110,6 +112,38 @@ string_output <- str_c(string_prefix,
 
 cat(string_output)
 ```
+
+## With input from the week 3 meetup:
+To do so this way, we'll perform 2 steps:
+
+1. Create a regex pattern that will match on each fruit and the quotes and then extract this information into a list.
+2. With that list, convert it to a vector. As a vector, we will use str_flatten and concatenate the string with the prefix and suffix.
+
+```{r redo question 2}
+input_string <- '[1] "bell pepper"  "bilberry"     "blackberry"   "blood orange"
+[5] "blueberry"    "cantaloupe"   "chili pepper" "cloudberry"  
+[9] "elderberry"   "lime"         "lychee"       "mulberry"    
+[13] "olive"        "salal berry"'
+
+string_prefix <- 'c("'
+string_suffix <- '")'
+string_sep    <- ", "
+
+string_pattern <- '"(.*?)"'
+
+list_of_elements <- str_extract_all(input_string, pattern = string_pattern)
+
+vector_of_elements <- unlist(list_of_elements)
+
+combined_string <- str_flatten(vector_of_elements, string_sep)
+
+output_string <- str_c(string_prefix, combined_string, string_suffix)
+
+cat(output_string)
+
+```
+
+Using that 3rd method, we can see that the string is output in the format specified.
 
 ## Task 3:
 Describe, in words, what these expressions will match:
