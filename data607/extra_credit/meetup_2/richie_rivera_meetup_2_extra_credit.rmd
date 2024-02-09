@@ -2,8 +2,8 @@
 title: "Data 607 - Meetup 2 Extra Credit"
 author: "Richie R."
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 # Overview
@@ -30,7 +30,7 @@ library(dplyr)
 library(ggplot2)
 library(stringr)
 
-data_url <- "https://raw.githubusercontent.com/riverar9/cuny-msds/main/data607/extra_credit/penguin_predictions.csv"
+data_url <- "https://raw.githubusercontent.com/riverar9/cuny-msds/main/data607/extra_credit/meetup_2/penguin_predictions.csv"
 penguin_predictions <- read.csv(data_url)
 
 penguin_predictions |>
