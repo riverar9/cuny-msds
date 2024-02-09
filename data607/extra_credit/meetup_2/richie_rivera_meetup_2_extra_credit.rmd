@@ -2,8 +2,8 @@
 title: "Data 607 - Meetup 2 Extra Credit"
 author: "Richie R."
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 # Overview
@@ -20,8 +20,8 @@ For binary classification problems, these are typically represented in a confusi
 
 Type|Actual Positive|Actual Negative
 --- | ------------- | --------------
-Predicted Negative | TP | FP
-Predicted Positive | FN | TN
+Predicted Positive | TP | FP
+Predicted Negative | FN | TN
 
 Before we get into tasks, let's first read in the prediction dataset:
 
@@ -91,7 +91,7 @@ colors <- c('plum', 'blue')
 
 ggplot(penguin_predictions, aes(x = sex)) +
   geom_bar(fill = colors) +
-  geom_text(stat = "count", aes(label = ..count..), vjust = -1)
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -1)
 ```
 
 From that graph, we can see that the majority of observations are of male penguins (54 males vs 39 females). Therefore, the male class is the majority class.
