@@ -1,7 +1,7 @@
 .Rhistory
 .RData
 *.zip
-*.csv
+*tripdata.csv
 data_*
 *auth.json
 *.dcf
