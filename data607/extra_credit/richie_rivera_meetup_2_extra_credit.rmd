@@ -1,0 +1,52 @@
+---
+title: "Data 607 - Meetup 2 Extra Credit"
+author: "Richie R."
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r }
+library(rmarkdown)
+pandoc_available()
+```
+
+# Overview
+
+For this extra credit we will be going over what's required to analze binary classification model performance.
+
+- **Binary Classification** - A machine learning technique that categorizes data into one of two classes/groups.
+- **True Positive (TP)** - A predicted *positive* being an actual *positive*
+- **True Negative (TN)** - A predicted *negative* being an actual *negative*
+- **False Positive (FP)** - A predicted *negative* is an actual *negative*
+- **False Negative (FN)** - A predicted *negative* is an actual *positive*
+
+For binary classification problems, these are typically represented in a confusion matrix where one axis is actual and the other are predicted. Then the 4 quadrants inside reprsent TP, TN, FP, FN.
+
+Type|Actual Positive|Actual Negative
+--- | ------------- | --------------
+Predicted Negative | TP | FP
+Predicted Positive | FN | TN
+
+Before we get into tasks, let's first read in the prediction dataset:
+
+```{r read in the penguin predictions}
+
+```
+
+# 1. Task 1
+### Calculate and state the null error rate for the provided classification_model_performance.csv dataset. Create a plot showing the data distribution of the actual explanatory variable. Explain why always knowing the null error rate (or majority class percent) matters. Below is an example (from a different dataset!); can you do better with ggplot?
+
+
+
+# 2.
+### Analyze the data to determine the true positive, false positive, true negative, and false negative values for the dataset, using .pred_female thresholds of 0.2, 0.5, and 0.8. Display your results in three confusion matrices, with the counts of TP, FP, TN, and FN. You may code your confusion matrix “by hand” (encouraged!), but full credit if you use “pre-packaged methods” here.
+
+# 3.
+### Create a table showing—for each of the three thresholds—the accuracy, precision, recall, and F1 scores.
+
+# 4. 
+### Provide at least one example use case where (a) an 0.2 scored probability threshold would be preferable, and (b) an 0.8 scored probability threshold would be preferable.
+
+
+# Conclusion
