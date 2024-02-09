@@ -6,14 +6,9 @@ output:
   html_document: default
 ---
 
-```{r }
-library(rmarkdown)
-pandoc_available()
-```
-
 # Overview
 
-For this extra credit we will be going over what's required to analze binary classification model performance.
+For this extra credit, we will be going over what's required to Analyze binary classification model performance.
 
 - **Binary Classification** - A machine learning technique that categorizes data into one of two classes/groups.
 - **True Positive (TP)** - A predicted *positive* being an actual *positive*
@@ -21,7 +16,7 @@ For this extra credit we will be going over what's required to analze binary cla
 - **False Positive (FP)** - A predicted *negative* is an actual *negative*
 - **False Negative (FN)** - A predicted *negative* is an actual *positive*
 
-For binary classification problems, these are typically represented in a confusion matrix where one axis is actual and the other are predicted. Then the 4 quadrants inside reprsent TP, TN, FP, FN.
+For binary classification problems, these are typically represented in a confusion matrix where one axis is actual and the other are predicted. Then the 4 quadrants inside represent TP, TN, FP, FN.
 
 Type|Actual Positive|Actual Negative
 --- | ------------- | --------------
@@ -31,22 +26,209 @@ Predicted Positive | FN | TN
 Before we get into tasks, let's first read in the prediction dataset:
 
 ```{r read in the penguin predictions}
+library(dplyr)
+library(ggplot2)
+library(stringr)
 
+data_url <- "https://raw.githubusercontent.com/riverar9/cuny-msds/main/data607/extra_credit/penguin_predictions.csv"
+penguin_predictions <- read.csv(data_url)
+
+penguin_predictions |>
+  group_by(.pred_class, sex) |>
+  count()
 ```
 
-# 1. Task 1
+With this table, we must define that being categorized as female is the positive. So a TP will be when .pred_class and sex are both female.
+
+With that defined, I found that there's a table() function which conveniently creates a confusion matrix.
+
+```{r use table to create a confusion matrix}
+pred_cm <- table(penguin_predictions$.pred_class, penguin_predictions$sex)
+
+pred_cm
+```
+
+It is important to note that in this orientation, the confusion matrix above has the actual varying along the x-axis and the predicted varying on the y-axis. With the tibble and the table above, we can collect the TP, TN, FP, FN:
+
+- TP = 36
+- FP = 3
+- TN = 51
+- FN = 3
+
+Let's encode this into integer variables for reference later. We'll do this by taking the values directly from the confusion matrix created above:
+
+```{r save the rates}
+tp <- pred_cm[1]
+fn <- pred_cm[2]
+fp <- pred_cm[3]
+tn <- pred_cm[4]
+
+print(str_c(tp, "\t", fp))
+print(str_c(fn, "\t", tn))
+```
+# Task 1
 ### Calculate and state the null error rate for the provided classification_model_performance.csv dataset. Create a plot showing the data distribution of the actual explanatory variable. Explain why always knowing the null error rate (or majority class percent) matters. Below is an example (from a different dataset!); can you do better with ggplot?
 
+- **Null Error Rate (NER)** - The accuracy when predicting the majority class.
+
+Therefore, for the majority class, Null Error Rate can be calculated by:
+
+$$
+sample_c=\text{correctly predicted sample}
+$$
+$$
+sample_p=\text{total population of the sample}
+$$
+$$
+NER = \dfrac{sample_c}{sample_p}
+$$
 
 
-# 2.
+First to calculate the NER, we will need to know what is the majority class is:
+
+```{r graph a plot to see which class has the most observations}
+colors <- c('plum', 'blue')
+
+ggplot(penguin_predictions, aes(x = sex)) +
+  geom_bar(fill = colors) +
+  geom_text(stat = "count", aes(label = ..count..), vjust = -1)
+```
+
+From that graph, we can see that the majority of observations are of male penguins (54 males vs 39 females). Therefore, the male class is the majority class.
+Now that we know this, we can use the TN and FN to calculate NER as these correspond to the majority class:
+
+```{r calculate the NER}
+ner <- tn / (fn + tn)
+
+ner
+```
+
+or because I like using LaTex:
+
+$$
+NER = \dfrac{sample_c}{sample_p} = \dfrac{51}{(3+51)} = \text{94.4%}
+$$
+
+The NER can be a good measure of how well the classification performs compared to simple chance. For the classification to do well, then the NER must be greater than the overall chance. For example, if 99% of all penguins were male, then a NER of 94% would be worse off than a 99% chance.
+
+# Task 2
 ### Analyze the data to determine the true positive, false positive, true negative, and false negative values for the dataset, using .pred_female thresholds of 0.2, 0.5, and 0.8. Display your results in three confusion matrices, with the counts of TP, FP, TN, and FN. You may code your confusion matrix “by hand” (encouraged!), but full credit if you use “pre-packaged methods” here.
 
-# 3.
+First, we'll modify the dataframe to have a column for each prediction threshold:
+
+```{r modify penguin_predictions to include predictions at different thresholds}
+penguin_predictions <- penguin_predictions |>
+  mutate(.pred_class.2 = ifelse(.pred_female < 0.2, "male", "female")) |>
+  mutate(.pred_class.5 = ifelse(.pred_female < 0.5, "male", "female")) |>
+  mutate(.pred_class.8 = ifelse(.pred_female < 0.8, "male", "female"))
+
+head(penguin_predictions)
+```
+
+Now we'll create a confusion matrix using table:
+
+```{r create confusion matrices}
+pred_cm2 <- table(penguin_predictions$.pred_class.2, penguin_predictions$sex)
+pred_cm5 <- table(penguin_predictions$.pred_class.5, penguin_predictions$sex)
+pred_cm8 <- table(penguin_predictions$.pred_class.8, penguin_predictions$sex)
+
+pred_cm2
+pred_cm5
+pred_cm8
+```
+
+When the threshold is lowered to .2, we can observe that the number of true positives increases by one but the number of false positives increase. So, doing so increases our NER.
+
+On the contrast, when increasing our threshold to .5 did not change the result at all. This would mean that there are no .pred_female values which are between the inherent threshold and .5. To verify this finding, I'll put it into a graph:
+
+```{r graphing .pred_female}
+ggplot(penguin_predictions, aes(x = .pred_female, y = .pred_female)) +
+  geom_point()
+```
+
+Looking at the scatter plot, the values for .pred_female do not have any entries from around .35 to about .75. So any threshold between these two numbers will yield the same result.
+Finally, looking at the threshold  of .8 we observe that one entry from the FP bucket has moved to a TN therefore increasing our NER.
+This exercise really demonstrates the importance of setting thresholds and also how potentially impactful a modification can change the metrics and results.
+
+But it leaves a question, how can we most robustly determine a threshold  to use?
+Online, I found a [resource from Google](https://developers.google.com/machine-learning/crash-course/classification/thresholding) which provided a few methods for determining this and it suggested to plot a ROC curve. Doing so seems too timely at the moment but I am looking forward to doing so!
+
+# Task 3
 ### Create a table showing—for each of the three thresholds—the accuracy, precision, recall, and F1 scores.
 
-# 4. 
+- Accuracy = *acc*
+- Precision = *pre*
+- Recall = *rec*
+- F1_score = *f~1~*
+
+
+Reviewing a few definitions:
+$$
+acc = \dfrac{TP + TN}{TP + FP + FN + TN}
+$$
+$$
+pre = \dfrac{TP}{TP + FP}
+$$
+$$
+rec = \dfrac{TP}{TP + FN}
+$$
+$$
+F_1 =\dfrac{2 * pre * rec}{pre + rec}
+$$
+
+With the definitions, let's create a table with all these calculations organized:
+
+```{r calculating the tp, fp, tn, fn}
+acc <- (tp + tn) / (tp + fp + fn + tn)
+pre <- (tp) / (tp + fp)
+rec <- (tp) / (tp + fn)
+f_1 <- (2 * pre * rec) / (pre + rec)
+
+thresholds <- c(.2, .5, .8)
+
+collection <- c(acc, pre, rec, f_1)
+
+for (threshold in thresholds) {
+  temp_df <- penguin_predictions |>
+    mutate(t_pred_class = ifelse(.pred_female < threshold, "male", "female"))
+
+  temp_cm <- table(temp_df$t_pred_class, temp_df$sex)
+
+  t_tp <- temp_cm[1]
+  t_fn <- temp_cm[2]
+  t_fp <- temp_cm[3]
+  t_tn <- temp_cm[4]
+
+  t_acc <- (t_tp + t_tn) / (t_tp + t_fp + t_fn + t_tn)
+  t_pre <- (t_tp) / (t_tp + t_fp)
+  t_rec <- (t_tp) / (t_tp + t_fn)
+  t_f_1 <- (2 * t_pre * t_rec) / (t_pre + t_rec)
+
+  collection <- c(collection, t_acc, t_pre, t_rec, t_f_1)
+}
+
+scores_matrix <- matrix(collection, ncol=4, byrow=TRUE)
+
+colnames(scores_matrix) <- c("accuracy", "precision", "recall", "f1 score")
+rownames(scores_matrix) <- c("provided", thresholds)
+
+
+scores_table <- as.table(scores_matrix)
+
+scores_matrix
+```
+
+With the code above, you would be able to theoretically add more thresholds and use those to recalculate all of the scores.
+
+Now looking at the table we can see that at a threshold of 0.8 we can verify our observation in Task 3. Additionally, we can see that all metrics are best when the threshold is 0.8.
+
+
+# Task 4
 ### Provide at least one example use case where (a) an 0.2 scored probability threshold would be preferable, and (b) an 0.8 scored probability threshold would be preferable.
 
+- a) A 0.2 may be preferable if there is opportunity that could be missed with elements categorized as a true negative. For example, if one were to run an email campaign (a cheap and low effort campaign), it is in the best interest to include more individuals.
+- b) On the other side, a 0.8 may be preferable if there is a significant cost to false negatives. For example, YouTube had [500 hours of video content uploaded every minute](https://www.statista.com/statistics/259477/hours-of-video-uploaded-to-youtube-every-minute/#:~:text=Hours%20of%20video%20uploaded%20to%20YouTube%20every%20minute%202007%2D2022&text=As%20of%20June%202022%2C%20more,newly%20uploaded%20content%20per%20hour.) in June 2022. To moderate this properly, the content moderation team would need to have a high probability threshold to ensure that moderation teams are not tasked with watching every video posted.
 
 # Conclusion
+
+Using the penguin sex prediction model output to evaluate scores has been a great introduction to assesing a classification model's performance. With this exercise I am now intregued as to how classification problems can be optimized given the real world's constraints.
