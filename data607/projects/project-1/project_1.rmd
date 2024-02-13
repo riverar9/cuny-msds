@@ -1,0 +1,21 @@
+---
+title: "Data 607 - Project 1"
+author: "Richie R."
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Overview
+In this project, we will parse information out of a text file containing the results of a chess tournament. This file is read in as a formatted text file.
+
+To keep this interesting, we'll parameterize as much as we can and make this as recyclable as possible.
+
+## 1. Reading the text file as a string
+
+```{r reading the text file in}
+
+```
+
+
+# Conclusion
