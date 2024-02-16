@@ -406,7 +406,8 @@ Looking at the graph, it seems that the trend is that as distance increases, the
 
 ```{r lets look at that outlier}
 nycflights %>%
-  filter(avg_speed > 600)
+  filter(avg_speed > 600) %>%
+  select(avg_speed)
 ```
 
 There is an outlier on a flight to Atlanta that was really going fast. The US Standard Atmosphere tables show that the speed of sound at this elevation (35000) is 660 MPH, suggesting that this flight had bad data or there was an incredibly strong tailwind.
