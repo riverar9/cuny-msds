@@ -3,16 +3,7 @@ title: "Introduction to data"
 author: ""
 output:
   pdf_document: default
-  html_document:
-    includes:
-      in_header: header.html
-    css: ./lab.css
-    highlight: pygments
-    theme: cerulean
-    toc: true
-    toc_float: true
-editor_options: 
-  chunk_output_type: console
+  html_document: default
 ---
 
 First thing's first, I need to set the working directory:
