@@ -3,16 +3,16 @@ title: "Probability"
 author: "Richie Rivera"
 output:
   pdf_document: default
-  html_document:
-    includes:
-      in_header: header.html
-    css: ./lab.css
-    highlight: pygments
-    theme: cerulean
-    toc: true
-    toc_float: true
-editor_options: 
-  chunk_output_type: console
+#  html_document:
+#    includes:
+#      in_header: header.html
+#    css: ./lab.css
+#    highlight: pygments
+#    theme: cerulean
+#    toc: true
+#    toc_float: true
+#editor_options: 
+#  chunk_output_type: console
 ---
 
 ```{r global_options, include=FALSE}
@@ -65,6 +65,10 @@ Within the nine shot attempts, there are six streaks, which are separated by a "
 
 **Insert your answer here**
 
+Using the example above with the first 9 shots, a streak of 1 means that Kobe (RIP) has made one shot and missed another. So there are two shots within a streak of 1.
+
+**End of Answer**
+
 Counting streak lengths manually for all 133 shots would get tedious, so we'll use the custom function `calc_streak` to calculate them, and store the results in a data frame called `kobe_streak` as the `length` variable.
 
 ```{r calc-streak-kobe}
@@ -83,6 +87,16 @@ ggplot(data = kobe_streak, aes(x = length)) +
     baskets? Make sure to include the accompanying plot in your answer.
 
 **Insert your answer here**
+
+```{r plot distribution of streaks}
+ggplot(data = kobe_streak, aes(x = length)) +
+  geom_boxplot()
+```
+
+According to the box and whisker plot above, we can see that the median streak is of 0. Meaning that half of his streaks were missing two shots in a row and his longest streak of baskets were 4.
+
+**End of Answer**
+
 
 ## Compared to What?
 
@@ -151,6 +165,21 @@ sim_unfair_coin <- sample(coin_outcomes, size = 100, replace = TRUE,
 
 **Insert your answer here**
 
+```{r simulating flipping an unfair coin}
+set.seed(19940211)
+
+sim_8020_coin <- sample(coin_outcomes, size = 100, replace = TRUE,
+                        prob = c(0.2, 0.8))
+
+table(sim_8020_coin)
+```
+
+Setting the seed to a fixed value should keep the result of successive simulations the same.
+With this seed, there were 21 heads and 79 tails, which is very close to the 20% to 80% split.
+
+**End of Answer**
+
+
 <div id="boxedtext">
 **A note on setting a seed:** Setting a seed will cause R to select the same sample each time you knit your document. This will make sure your results don't change each time you knit, and it will also ensure reproducibility of your work (by setting the same seed it will be possible to reproduce your results). You can set a seed like this:
 
@@ -165,7 +194,7 @@ In a sense, we've shrunken the size of the slip of paper that says "heads", maki
 
 If you want to learn more about `sample` or any other function, recall that you can always check out its help file.
 
-```{r help-sample,tidy = FALSE}
+```{r help-sample,tidy = FALSE, eval=FALSE}
 ?sample
 ```
 
@@ -187,6 +216,24 @@ To make a valid comparison between Kobe and your simulated independent shooter, 
 
 **Insert your answer here**
 
+In order to simulate an independent shooter, the sample function will need to be updated to change the size to 133 and the probabilities to reflect a 55% miss chance and a 45% hit chance.
+
+I would also like to state that we switched the seed in the cell above to 35797 as well.
+
+Reusing the shot_outcomes variable from before:
+
+```{r independent shooter}
+sim_basket <- sample(shot_outcomes, size = 133, replace = TRUE,
+                     prob = c(.45, .55))
+
+table(sim_basket)
+```
+
+From this simulation, we can see that there are 62 hits and 71 misses.
+
+**End of Answer**
+
+
 Note that we've named the new vector `sim_basket`, the same name that we gave to the previous vector reflecting a shooting percentage of 50%. In this situation, R overwrites the old object with the new one, so always make sure that you don't need the information in an old vector before reassigning its name.
 
 With the results of the simulation saved as `sim_basket`, you have the data necessary to compare Kobe to our independent shooter.
@@ -204,12 +251,38 @@ Both data sets represent the results of 133 shot attempts, each with the same sh
 
 **Insert your answer here**
 
+```{r get the sim_streak}
+sim_streak <- calc_streak(sim_basket)
+```
+
+**End of Answer**
+
+
 6.  Describe the distribution of streak lengths. What is the typical streak 
     length for this simulated independent shooter with a 45% shooting percentage?
     How long is the player's longest streak of baskets in 133 shots? Make sure
     to include a plot in your answer.
 
 **Insert your answer here**
+
+```{r independent shooter streak lengths}
+ggplot(data = sim_streak, aes(x = length)) +
+  geom_boxplot()
+```
+
+Looking at the box and whisker plot, we can see that the typical streak is still 0 although this independent player's longest streak is 6 shots.
+
+Given that there is a 45% chance of making any individual shot, then we can calculate the chances of having a streak of 6 by this:
+
+$$
+P(\textrm{4 hits in a row}) = (0.45)^4 = 0.0410 = 4.10%
+P(\textrm{6 hits in a row}) = (0.45)^6 = 0.0083 = 0.83%
+$$
+
+With a 0.83% chance, it's a rare occurance for 6 hits in a row but the 4 hits in a row that Kobe had isn't nearly as rare.
+
+**End of Answer**
+
 
 7.  If you were to run the simulation of the independent shooter a second time, 
     how would you expect its streak distribution to compare to the distribution 
@@ -218,11 +291,23 @@ Both data sets represent the results of 133 shot attempts, each with the same sh
 
 **Insert your answer here**
 
+I expect it to be somewhat similar as there are a large number of shots being simulated and because of that, there is a relatively low chance that the distribution of data would be vastly different.
+
+**End of Answer**
+
+
 8.  How does Kobe Bryant's distribution of streak lengths compare to the 
     distribution of streak lengths for the simulated shooter? Using this 
     comparison, do you have evidence that the hot hand model fits Kobe's 
     shooting patterns? Explain.
 
 **Insert your answer here**
+
+Comparing our simulated shooter's streak length to Kobe Bryant's we see a very similar pattern. Both had a similar distribution of streaks, being that the majority of streaks are 0 and quickly taper off with 2 being the far edge of the whisker. With an IQR from 0 to 1, it is also farily uncommon that there are streaks greater than 1.
+
+This simulation appears to be evidence against the hot hand model as it seems that the streak lengths are more random. If the hot hand model was true, I would expect to see more streaks and longer streaks.
+
+**End of Answer**
+
 
 * * *
