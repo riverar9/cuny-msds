@@ -7,7 +7,51 @@ output:
 ---
 
 # Overview
+In this assignemnt, we will be tidying a dataset containing delay and ontime information for two airlines by city.
 
-## 1. H2
+The datset resembles the table below:
+
+|| |Los Angeles|Phoenix|San Diego|San Francisco|Seattle|
+|------|-------|-----------|-------|---------|-------------|-------|
+|ALASKA|on time|497        |221    |212      |503          |1,841  |
+|      |delayed|62         |12     |20       |102          |305    |
+|      |       |           |       |         |             |       |
+|AM WEST|on time|694        |4,840  |383      |320          |201    |
+|      |delayed|117        |415    |65       |129          |61     |
+
+
+## 1. Setting up the data
+
+Firstly, we will need to have this data available from somewhere in the format above. I decided to use GCP's BigQuery and initalized the table with the below SQL statements:
+
+```{SQL eval = FALSE}
+drop table data607.assignment4_data;
+
+CREATE TABLE data607.assignment4_data (
+  row_id int64,
+  column1 STRING,
+  column2 STRING,
+  `Los Angeles` INT64,
+  `Phoenix` INT64,
+  `San Diego` INT64,
+  `San Francisco` INT64,
+  `Seattle` INT64
+);
+
+INSERT INTO data607.assignment4_data 
+  (row_id, column1, column2, `Los Angeles`, `Phoenix`, `San Diego`, `San Francisco`, `Seattle`)
+VALUES
+  (1,'ALASKA', 'on time',494,221,212,503,1841),
+  (2,'','delayed',62,12,20,102,305),
+  (3,'AM West', 'on time',694,4840,383,320,201),
+  (4,'','delayed',117,415,65,129,61);
+```
+
+A row_id was necessary as the order of the rows mattered and there was an issue where rows would be ordered by alphabetical order on the first column, disrupting the order.
+
+## 2. Extracting the data from GCP
+
+Since we are using biguery
+
 
 # Conclusion
