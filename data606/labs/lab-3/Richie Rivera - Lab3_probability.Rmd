@@ -183,7 +183,7 @@ With this seed, there were 21 heads and 79 tails, which is very close to the 20%
 <div id="boxedtext">
 **A note on setting a seed:** Setting a seed will cause R to select the same sample each time you knit your document. This will make sure your results don't change each time you knit, and it will also ensure reproducibility of your work (by setting the same seed it will be possible to reproduce your results). You can set a seed like this:
 
-```{r set-seed}
+```{r set-seed, eval=FALSE}
 set.seed(35797)                 # make sure to change the seed
 ```
 
@@ -276,6 +276,8 @@ Given that there is a 45% chance of making any individual shot, then we can calc
 
 $$
 P(\textrm{4 hits in a row}) = (0.45)^4 = 0.0410 = 4.10%
+$$
+$$
 P(\textrm{6 hits in a row}) = (0.45)^6 = 0.0083 = 0.83%
 $$
 
@@ -292,6 +294,7 @@ With a 0.83% chance, it's a rare occurance for 6 hits in a row but the 4 hits in
 **Insert your answer here**
 
 I expect it to be somewhat similar as there are a large number of shots being simulated and because of that, there is a relatively low chance that the distribution of data would be vastly different.
+But, if the seed was set to the same as it is here then I expect the results to be exactly the same.
 
 **End of Answer**
 
