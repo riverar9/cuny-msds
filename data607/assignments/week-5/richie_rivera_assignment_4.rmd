@@ -187,7 +187,7 @@ ggplot(flights_summary, aes(x = airline, y = delay_pct, fill = airline)) +
   xlab("")
 ```
 
-This graph above shows pretty clearly that `AM West` pretty reliably has a higher percentage of delayed flights over `ALASKA`. For both airlines, Pheonix was the airport with the lowest delay percentage.
+This graph above shows pretty clearly that `AM West` pretty reliably has a higher percentage of delayed flights over `ALASKA`. For both airlines, Phoenix was the airport with the lowest delay percentage.
 
 ```{r SFO delay comparison}
 flights_summary |>
