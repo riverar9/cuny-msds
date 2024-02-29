@@ -413,7 +413,7 @@ ggplot(data = dairy_queen, aes(sample = total_carb)) +
   geom_point(stat = "qq")
 ```
 
-Judging from this QQ plot, I would assume that the dataset is left skewed because it seems that there are many values to the bottom left of the plot.
+Judging from this QQ plot, I would assume that the dataset is left skewed because of the general caved-downward shape of the Q-Q plot.
 
 ```{r tacobell histogram}
 ggplot(data = taco_bell, aes(x = total_carb)) +
