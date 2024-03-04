@@ -664,7 +664,7 @@ ggplot() +
     breaks = seq(
       2007,
       2022,
-      by = 1
+      by = 2
     )
   ) +
   scale_y_continuous(
@@ -789,7 +789,7 @@ ggplot() +
     breaks = seq(
       2007,
       2022,
-      by = 1
+      by = 2
     )
   ) +
   scale_y_continuous(
@@ -858,7 +858,7 @@ ggplot() +
     breaks = seq(
       2007,
       2022,
-      by = 1
+      by = 2
     )
   ) +
   scale_y_continuous(
@@ -982,7 +982,7 @@ ggplot() +
     breaks = seq(
       2007,
       2022,
-      by = 1
+      by = 2
     )
   ) +
   scale_y_continuous(
