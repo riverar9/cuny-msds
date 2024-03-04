@@ -7,7 +7,7 @@ output:
 ---
 
 # Overview
-In this project, we will explore three of the datasets and analysis question presented within Discussion 5.
+In this project, we will explore three of the datasets and analyses question presented within Discussion 5.
 
 The three analysis that will be performed in this will be:
 
