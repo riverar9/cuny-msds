@@ -3,21 +3,20 @@ title: "Foundations for statistical inference - Sampling distributions"
 author: ""
 output:
   pdf_document: default
-  html_document:
-    includes:
-      in_header: header.html
-    css: ./lab.css
-    highlight: pygments
-    theme: cerulean
-    toc: true
-    toc_float: true
-editor_options: 
-  chunk_output_type: console
+#    html_document:
+#      includes:
+#        in_header: header.html
+#      css: ./lab.css
+#      highlight: pygments
+#      theme: cerulean
+#      toc: true
+#      toc_float: true
+#  editor_options: 
+#    chunk_output_type: console
 ---
 
 ```{r global_options, include=FALSE}
-knitr::opts_chunk$set(eval = TRUE, message = FALSE, warning = FALSE)
-set.seed(1234)
+set.seed(1994)
 ```
 
 In this lab, you will investigate the ways in which the statistics from a random sample of data can serve as point estimates for population parameters. We're interested in formulating a *sampling distribution* of our estimate in order to learn about the properties of the estimate, such as its distribution.
@@ -67,7 +66,7 @@ ggplot(global_monitor, aes(x = scientist_work)) +
     x = "", y = "",
     title = "Do you believe that the work scientists do benefit people like you?"
   ) +
-  coord_flip() 
+  coord_flip()
 ```
 
 We can also obtain summary statistics to confirm we constructed the data frame correctly.
@@ -75,7 +74,7 @@ We can also obtain summary statistics to confirm we constructed the data frame c
 ```{r summ-stat-pop, results = TRUE}
 global_monitor %>%
   count(scientist_work) %>%
-  mutate(p = n /sum(n))
+  mutate(p = n / sum(n))
 ```
 
 ## The unknown sampling distribution
@@ -94,6 +93,25 @@ This command collects a simple random sample of size 50 from the `global_monitor
 1.  Describe the distribution of responses in this sample. How does it compare to the distribution of responses in the population. **Hint:** Although the `sample_n` function takes a random sample of observations (i.e. rows) from the dataset, you can still refer to the variables in the dataset with the same names. Code you presented earlier for visualizing and summarizing the population data will still be useful for the sample, however be careful to not label your proportion `p` since you're now calculating a sample statistic, not a population parameters. You can customize the label of the statistics to indicate that it comes from the sample.
 
 **Insert your answer here**
+
+```{r random-sample-50, fig.height=2.5, fig.width=10}
+ggplot(samp1, aes(x = scientist_work)) +
+  geom_bar(fill = "forestgreen") +
+  labs(
+    x = "", y = "",
+    title = "Random Sample 50: Do you believe that the work scientists do benefit people like you?"
+  ) +
+  coord_flip()
+
+samp1 %>%
+  count(scientist_work) %>%
+  mutate(n_50_sample_pct = n / sum(n))
+
+```
+
+In this random sample of 50 respondents, we can see that 70% of the respondents believe that the work of science benefits them and 30% do not. This illustrates how a randomly selected sample will likely be close to the population value but unlikely to be exact. Therefore, we can expect that depending on the sample size and the population size there may be an expected deviation between the two values.
+
+**End of your answer**
 
 If you're interested in estimating the proportion of all people who do not believe that the work scientists do benefits them, but you do not have access to the population data, your best single guess is the sample mean.
 
@@ -119,9 +137,28 @@ Depending on which 50 people you selected, your estimate could be a bit above or
 
 **Insert your answer here**
 
+Assuming that the seeds are different, then I would expect that the sample proportion to be slightly different. I believe so because most random sample of 50 respondents will contain results where more of the respondents believe that science benefits them.
+
+**End of your answer**
+
 3.  Take a second sample, also of size 50, and call it `samp2`. How does the sample proportion of `samp2` compare with that of `samp1`? Suppose we took two more samples, one of size 100 and one of size 1000. Which would you think would provide a more accurate estimate of the population proportion?
 
 **Insert your answer here**
+
+```{r second-sample}
+samp2 <- global_monitor %>%
+  sample_n(50)
+
+samp2 %>%
+  count(scientist_work) %>%
+  mutate(n_50_sample_pct = n / sum(n))
+```
+
+The second sample is a little bit closer to the population mean with 76% of respondents believing.
+
+As the number in the sample increases, we can expect that the sample will be a more accurate measure of the total population due to the law of large numbers.
+
+**End of your answer**
 
 Not surprisingly, every time you take another random sample, you might get a different sample proportion. It's useful to get a sense of just how much variability you should expect when estimating the population mean this way. The distribution of sample proportions, called the *sampling distribution (of the proportion)*, can help you understand this variability. In this lab, because you have access to the population, you can build up the sampling distribution for the sample proportion by repeating the above steps many times. Here, we use R to take 15,000 different samples of size 50 from the population, calculate the proportion of responses in each sample, filter for only the *Doesn't benefit* responses, and store each result in a vector called `sample_props50`. Note that we specify that `replace = TRUE` since sampling distributions are constructed by sampling with replacement.
 
@@ -152,6 +189,43 @@ Next, you will review how this set of code works.
 
 **Insert your answer here**
 
+```{r reviewing-code}
+middle_line_location <- median(sample_props50$p_hat)
+
+ggplot(data = sample_props50, aes(x = p_hat)) +
+  geom_histogram(
+    binwidth = 0.02,
+    fill = "forestgreen",
+    color = "black"
+  ) +
+  geom_vline(
+    xintercept = middle_line_location,
+    linetype = "dashed",
+    color = "red"
+  ) +
+  labs(
+    x = "p_hat (Doesn't benefit)",
+    title = "Sampling distribution of p_hat",
+    subtitle = "Sample size = 50, Number of samples = 15000"
+  )
+
+observation_count <- prettyNum(nrow(sample_props50), big.mark = ",")
+
+print(
+  paste(
+    "There are",
+    observation_count,
+    "observations."
+  )
+)
+```
+
+There are `r observation_count` elements in `sample_props50`, this is the same as number passed into `reps` which is the number of samples to take. Because it was filtered to `scientist_work == "Doesn't benefit"` earlier, it only has one entry per sample.
+
+We can also see that the middle line (aka median), can be found at `r middle_line_location`
+
+**End of your answer**
+
 ## Interlude: Sampling distributions
 
 The idea behind the `rep_sample_n` function is *repetition*. Earlier, you took a single sample of size `n` (50) from the population of all people in the population. With this new function, you can repeat this sampling procedure `rep` times in order to build a distribution of a series of sample statistics, which is called the **sampling distribution**. 
@@ -176,6 +250,35 @@ Note that for each of the 15,000 times we computed a proportion, we did so from 
 
 **Insert your answer here**
 
+By modifying the code above we can get:
+
+```{r small samples}
+sample_props_small <- global_monitor |>
+  rep_sample_n(size = 10, reps = 25, replace = TRUE) |>
+  count(scientist_work) |>
+  mutate(p_hat = n / sum(n))
+
+sample_props_small
+```
+
+```{r how many rows}
+observation_count <- prettyNum(nrow(sample_props_small), big.mark = ",")
+
+print(
+  paste(
+    "There are",
+    observation_count,
+    "observations."
+  )
+)
+```
+
+In this dataset, there are `r observation_count` observations.
+
+Each observation represents one outcome of `scientist_work` across one sample. But one interesting observation is that each sample doesn't have two corresponding entries. When one outcome is the only one represented in a sample, then there will not be a corresponding row where the other observation has `n = p_hat = 0`.
+
+**End of your answer**
+
 ## Sample size and the sampling distribution
 
 Mechanics aside, let's return to the reason we used the `rep_sample_n` function: to compute a sampling distribution, specifically, the sampling distribution of the proportions from samples of 50 people. 
@@ -193,7 +296,17 @@ In the remainder of this section, you will work on getting a sense of the effect
 
 **Insert your answer here**
 
+Each observation in this dataset corresponds with the prcentage of respondents who responded with *Doesn't benefit* related to the total population of the sample.
+
+As we increase the numebr of respondents per sample, we can see that the mean seems to approach the population mean while the standard error appears to decrease. Additionally, we can see that the shape begins to resemble a normal distribution much more.
+
+When increasing the number of simulations, there was not a great change in how the plot views, suggesting that there is not any additional value in increasing simulations after a certain point. From my experimentation, it seems that at around 200 simulations the results consistently resemble a bell curve.
+
+**End of your answer**
+
 ```{r shiny, echo=FALSE, eval=FALSE, results = TRUE}
+library(shiny)
+
 # This R chunk will only run in interactive mode.
 shinyApp(
   ui <- fluidPage(
@@ -301,6 +414,20 @@ Note that while you might be able to answer some of these questions using the ap
 
 **Insert your answer here**
 
+```{r question 7}
+sample_15 <- global_monitor %>%
+  sample_n(15)
+
+sample_15 %>%
+  count(scientist_work) %>%
+  mutate(n_15_sample_pct = n / sum(n)) |>
+  filter(scientist_work == "Benefits")
+```
+
+This sample exactly matches the population mean of 80%. So, the best point estimate of for this population is 80%.
+
+**End of your answer**
+
 8.  Since you have access to the population, simulate the sampling 
     distribution of proportion of those who think the work scientists do enchances 
     their lives for samples of size 15 by taking 2000 samples from the population 
@@ -312,6 +439,37 @@ Note that while you might be able to answer some of these questions using the ap
 
 **Insert your answer here**
 
+```{r question 8}
+sample_props15 <- global_monitor |>
+  rep_sample_n(size = 15, reps = 2000, replace = TRUE) |>
+  count(scientist_work) |>
+  mutate(p_hat = n / sum(n)) |>
+  filter(scientist_work == "Benefits")
+
+middle_line_location2 <- median(sample_props15$p_hat)
+
+ggplot(data = sample_props15, aes(x = p_hat)) +
+  geom_histogram(
+    binwidth = 0.02,
+    fill = "forestgreen",
+    color = "black"
+  ) +
+  geom_vline(
+    xintercept = middle_line_location2,
+    linetype = "dashed",
+    color = "red"
+  ) +
+  labs(
+    x = "p_hat (Benefits)",
+    title = "Sampling distribution of p_hat",
+    subtitle = "Sample size = 15, Number of samples = 2000"
+  )
+```
+
+This distribution From this graph, we can use the median of `r middle_line_location2` as the percentage of the population that believes. The shape of this graph is pretty wide, but that is seemingly due to the small size of each sample and a bin size of `.02`.
+
+**End of your answer**
+
 9.  Change your sample size from 15 to 150, then compute the sampling 
     distribution using the same method as above, and store these proportions in a 
     new object called `sample_props150`. Describe the shape of this sampling 
@@ -322,8 +480,45 @@ Note that while you might be able to answer some of these questions using the ap
 
 **Insert your answer here**
 
+```{r sample 150}
+sample_props150 <- global_monitor |>
+  rep_sample_n(size = 150, reps = 2000, replace = TRUE) |>
+  count(scientist_work) |>
+  mutate(p_hat = n / sum(n)) |>
+  filter(scientist_work == "Benefits")
+
+middle_line_location150 <- median(sample_props150$p_hat)
+
+ggplot(data = sample_props150, aes(x = p_hat)) +
+  geom_histogram(
+    binwidth = 0.02,
+    fill = "forestgreen",
+    color = "black"
+  ) +
+  geom_vline(
+    xintercept = middle_line_location150,
+    linetype = "dashed",
+    color = "red"
+  ) +
+  labs(
+    x = "p_hat (Benefits)",
+    title = "Sampling distribution of p_hat",
+    subtitle = "Sample size = 150, Number of samples = 2000"
+  )
+```
+
+This shape much more closely resembles a normal distribution compared to the sample size of 15 and is centered around `r middle_line_location150`. Given this, I would guess that the true population is around 80%.
+
+**End of your answer**
+
 10.  Of the sampling distributions from 2 and 3, which has a smaller spread?  If
     you're concerned with making estimates that are more often close to the 
     true value, would you prefer a sampling distribution with a large or small spread?
+
+**Insert your answer here**
+
+I'm not sure which sampling distribution is 2 or 3 from the exercise, but if I am concerned with making estimates that are more often close to the true value, then I would attempt to select the one with a smaller spread as it will allow us to more confidently pick a value closer to the true value than a larger spread. 
+
+**End of your answer**
 
 * * *
