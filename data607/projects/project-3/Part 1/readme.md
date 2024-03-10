@@ -1,1 +1,1 @@
-To create the ER Diagram I used [dbdiagram.io](https://dbdiagram.io/d/project-3-65ee1fc7b1f3d4062c921925) which did a great job!
+To create the ER Diagram I used [dbdiagram.io](https://dbdiagram.io/) which did a great job!
