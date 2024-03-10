@@ -1,0 +1,480 @@
+---
+title: "Data 607 - Assignment 5"
+author: "Richie R."
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Overview
+
+In this lab, we will retrieve information about 3 books. A requirement for these books is that at least one of the books must have 2 or more authors and we must retrieve at least 2 attributes about each book. Additionally, we will repeat this process using HTML, XML, and JSON.
+
+For added benefit, I will use an API to retrieve what is possible and also demonstrate doing the same with YAML.
+
+For this exercise, we were asked to create these files "by hand" (manually), which I will do for HTML, XML, and YAML.
+
+# I. Specifying our dataset
+
+For this, we will use the books below:
+
+- [The interesting narrative of the life of Olaudah Equiano, or Gustavus Vassa, the African](https://openlibrary.org/works/OL743333W)
+- [The good earth](https://openlibrary.org/works/OL1140109W/)
+- [Cyrano de Bergerac](https://openlibrary.org/works/OL551668W/)
+
+From these books, we will retrieve and store these attributes:
+
+- Title
+- Author
+- First Publish date
+- Description
+- Revision Number
+- Latest Revision Number
+
+## Importing packages
+We will import all packages necessary for this here.
+
+```{r imports}
+library(rvest)
+library(tidyverse)
+library(xml2)
+library(jsonlite)
+```
+
+# II. HTML
+
+## a. The handwritten HTML
+
+To set up the data, we have this html block below:
+
+```html
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      Working with XML and JSON in R
+    </title>
+  </head>
+  <body>
+    <table>
+        <tr>
+            <th>
+                Title
+            </th>
+            <th>
+                Author
+            </th>
+            <th>
+                First Publish Date
+            </th>
+            </th>
+            <th>
+                Description
+            </th>
+            <th>
+                Revision Number
+            </th>
+            <th>
+                Latest Revision Number
+            </th>
+        </tr>
+        <tr>
+            <td>
+                Cyrano de Bergerac
+            </td>
+            <td>
+                Edmond Rostand
+            </td>
+            <td>
+                1920
+            </td>
+            <td>
+                Cyrano de Bergerac, verse drama in five acts by Edmond Rostand, performed in 1897 and published the following year. It was based only nominally on the 17th-century nobleman of the same name, known for his bold adventures and large nose. Set in 17th-century Paris, the action revolves around the emotional problems of the noble, swashbuckling Cyrano, who, despite his many gifts, feels that no woman can ever love him because he has an enormous nose. Secretly in love with the lovely Roxane, Cyrano agrees to help his inarticulate rival, Christian, win her heart by allowing him to present Cyrano’s love poems, speeches, and letters as his own work. Eventually Christian recognizes that Roxane loves him for Cyrano’s qualities, not his own, and he asks Cyrano to confess his identity to Roxane; Christian then goes off to a battle that proves fatal. Cyrano remains silent about his own part in Roxane’s courtship. As he is dying years later, he visits Roxane and recites one of the love letters. Roxane realizes that it is Cyrano she loves, and he dies content. (Britannica)
+            </td>
+            <td>
+                26
+            </td>
+            <td>
+                26
+            </td>
+        </tr>
+        <tr>
+            <td>
+                The Good Earth
+            </td>
+            <td>
+                Pearl S. Buck, Nick Bertozzi, Ruth Goode, Donald F. Roden, Ernst Simon, and Stephen Colbourn
+            </td>
+            <td>
+                1960
+            </td>
+            <td>
+                This tells the poignant tale of a Chinese farmer and his family in old agrarian China. The humble Wang Lung glories in the soil he works, nurturing the land as it nurtures him and his family. Nearby, the nobles of the House of Hwang consider themselves above the land and its workers; but they will soon meet their own downfall. Hard times come upon Wang Lung and his family when flood and drought force them to seek work in the city. The working people riot, breaking into the homes of the rich and forcing them to flee. When Wang Lung shows mercy to one noble and is rewarded, he begins to rise in the world, even as the House of Hwang falls.
+            </td>
+            <td>
+                14
+            </td>
+            <td>
+                14
+            </td>
+        </tr>
+        <tr>
+            <td>
+                The life of Olaudah Equiano, or Gustavus Vassa, the African
+            </td>
+            <td>
+                Olaudah Equiano, Robert J. Allison, and Rebecka Rutledge Fisher
+            </td>
+            <td>
+                1998
+            </td>
+            <td>
+                The Interesting Narrative of the Life of Olaudah Equiano, written in 1789, details its writer's life in slavery, his time spent serving on galleys, the eventual attainment of his own freedom and later success in business. Including a look at how slavery stood in West Africa, the book received favorable reviews and was one of the first slave narratives to be read widely.
+            </td>
+            <td>
+                20
+            </td>
+            <td>
+                20
+            </td>
+        </tr>
+    </table>
+  </body>
+```
+
+## b. Loading our HTML data into R
+
+With our HTML code specified, we can access its url and use rvest in order to read the table in the html file:
+
+```{r read html data}
+html_url <- "https://raw.githubusercontent.com/riverar9/cuny-msds/main/data607/assignments/week-7/book_html_data.html" # nolint: line_length_linter.
+
+raw_html <- read_html(html_url)
+
+html_df <- html_table(
+  raw_html
+)
+
+head(html_df)
+
+str(html_df)
+
+```
+
+I was surprised by how quickly parsing an HTML table came together. I was anticipating needing to do more than simply using 2 predefined functions in the rvest package.
+
+But as we can see, HTML tags make data collection via HTML tables pretty straightforward.
+
+# III. XML
+
+## a. The Handwritten XML
+
+First we will need to specify the XML code. This code block has been saved as an XML file online.
+
+```XML
+<root>
+<book id = "Cyrano de Bergerac">
+    <Title>
+      Cyrano de Bergerac
+    </Title>
+    <Author>
+      Edmond Rostand
+    </Author>
+    <First_Publish_Date>
+      1920
+    </First_Publish_Date>
+    <Description>
+      Cyrano de Bergerac, verse drama in five acts by Edmond Rostand, performed in 1897 and published the following year. It was based only nominally on the 17th-century nobleman of the same name, known for his bold adventures and large nose. Set in 17th-century Paris, the action revolves around the emotional problems of the noble, swashbuckling Cyrano, who, despite his many gifts, feels that no woman can ever love him because he has an enormous nose. Secretly in love with the lovely Roxane, Cyrano agrees to help his inarticulate rival, Christian, win her heart by allowing him to present Cyrano’s love poems, speeches, and letters as his own work. Eventually Christian recognizes that Roxane loves him for Cyrano’s qualities, not his own, and he asks Cyrano to confess his identity to Roxane; Christian then goes off to a battle that proves fatal. Cyrano remains silent about his own part in Roxane’s courtship. As he is dying years later, he visits Roxane and recites one of the love letters. Roxane realizes that it is Cyrano she loves, and he dies content. (Britannica)
+    </Description>
+    <Revision_Number>
+      26
+    </Revision_Number>
+    <Latest_Revision_Number>
+      26
+    </Latest_Revision_Number>
+  </book>
+  <book id = "The Good Earth">
+    <Title>
+      The Good Earth
+    </Title>
+    <Author>
+      Pearl S. Buck, Nick Bertozzi, Ruth Goode, Donald F. Roden, Ernst Simon, and Stephen Colbourn
+    </Author>
+    <First_Publish_Date>
+      1960
+    </First_Publish_Date>
+    <Description>
+      This tells the poignant tale of a Chinese farmer and his family in old agrarian China. The humble Wang Lung glories in the soil he works, nurturing the land as it nurtures him and his family. Nearby, the nobles of the House of Hwang consider themselves above the land and its workers; but they will soon meet their own downfall. Hard times come upon Wang Lung and his family when flood and drought force them to seek work in the city. The working people riot, breaking into the homes of the rich and forcing them to flee. When Wang Lung shows mercy to one noble and is rewarded, he begins to rise in the world, even as the House of Hwang falls.
+    </Description>
+    <Revision_Number>
+      14
+    </Revision_Number>
+    <Latest_Revision_Number>
+      14
+    </Latest_Revision_Number>
+  </book>
+  <book id ="The life of Olaudah Equiano, or Gustavus Vassa, the African">
+    <Title>
+      The life of Olaudah Equiano, or Gustavus Vassa, the African
+    </Title>
+    <Author>
+      Olaudah Equiano, Robert J. Allison, and Rebecka Rutledge Fisher
+    </Author>
+    <First_Publish_Date>
+      1998
+    </First_Publish_Date>
+    <Description>
+      The Interesting Narrative of the Life of Olaudah Equiano, written in 1789, details its writers life in slavery, his time spent serving on galleys, the eventual attainment of his own freedom and later success in business. Including a look at how slavery stood in West Africa, the book received favorable reviews and was one of the first slave narratives to be read widely.
+    </Description>
+    <Revision_Number>
+      20
+    </Revision_Number>
+    <Latest_Revision_Number>
+      20
+    </Latest_Revision_Number>
+  </book>
+</root>
+
+```
+
+## b. Loading our XML data into R
+
+With our XML code specified, we can access its url and use rvest in order to read the table in the html file:
+
+```{r xml parsing}
+xml_url <- "https://raw.githubusercontent.com/riverar9/cuny-msds/main/data607/assignments/week-7/book_data.xml" # nolint: line_length_linter.
+
+xml_table <- xml_find_all(
+  read_xml(xml_url),
+  xpath = "//book"
+)
+
+xml_df <- xml_table |>
+  map_df(~
+    # .x represents the current element (XML node) being processed
+    tibble(
+      Title = xml_text(xml_find_all(.x, ".//Title"), trim = TRUE),
+      Author = xml_text(xml_find_all(.x, ".//Author"), trim = TRUE),
+      First_Publish_Date = xml_text(xml_find_all(.x, ".//First_Publish_Date"), trim = TRUE), # nolint: line_length_linter.
+      Description = xml_text(xml_find_all(.x, ".//Description"), trim = TRUE),
+      Revision_Number = xml_text(xml_find_all(.x, ".//Revision_Number"), trim = TRUE), # nolint: line_length_linter.
+      Latest_Revision_Number = xml_text(xml_find_all(.x, ".//Latest_Revision_Number"), trim = TRUE) # nolint: line_length_linter.
+    )
+  )
+
+xml_df
+
+str(xml_df)
+
+```
+
+I expected doing a bit more of this specifying in the HTML portion. Here we can see that we have to specify which correspond to which fields and also the XPath (XPath is a query language for selecting nodes in XML documents) that correspond with each of the attributes we wanted.
+
+# IV. JSON
+For this, we can leverage the [openlibrary.org's Book API](https://openlibrary.org/developers/api).
+
+In my experience, JSON has been the most common form for data to be delivered via APIs and openlibrary.org has an option to retrieve data in JSON format using their api:
+
+```{r json processing}
+urls <- c(
+  "https://openlibrary.org/works/OL743333W.json",
+  "https://openlibrary.org/works/OL1140109W.json",
+  "https://openlibrary.org/works/OL551668W.json"
+)
+
+# Initialize an empty dataframe with our fields
+json_df <- data.frame(
+  Title = character(),
+  Author = character(),
+  First_Publish_Date = character(),
+  Description = character(),
+  Revision_Number = numeric(),
+  Latest_Revision_Number = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Iterate throgh each url and extract the information
+for (url in urls) {
+  # Grab the json data and keep it with a key value pair.
+  temp_data <- fromJSON(url, flatten = TRUE)
+
+  authors_df <- temp_data["authors"][[1]] |>
+    mutate(
+      "api_url" = paste(
+        "http://openlibrary.org",
+        author.key,
+        ".json",
+        sep = ""
+      )
+    )
+
+  authors <- list()
+
+  for (row_number in seq_len(nrow(authors_df))) {
+    temp_author_data <- fromJSON(
+      authors_df[row_number, "api_url"],
+      flatten = TRUE
+    )["name"]
+
+    authors <- c(authors, temp_author_data["name"])
+  }
+
+  # Create an author string with every authors' name.
+  authors_info <- paste(authors, collapse = ", ")
+
+  # Extract the values from the JSON and append them to the dataframe
+  row_values <- list(
+    Title = temp_data["title"],
+    Author = authors_info,
+    First_Publish_Date = temp_data["first_publish_date"],
+    Description = temp_data["description"],
+    Revision_Number = temp_data["revision"],
+    Latest_Revision_Number = temp_data["latest_revision"]
+  )
+
+  # set the names of row_values the same as json_df
+  names(row_values) <- names(json_df)
+
+  # Convert our list into a dataframe
+  temp_df <- data.frame(
+    row_values,
+    stringsAsFactors = FALSE
+  )
+
+  json_df <- rbind(
+    json_df,
+    temp_df
+  )
+}
+
+json_df
+
+str(json_df)
+```
+
+This was a bit more involved than I initially thought it would be. But by using the openlibrary API, we were able to grab the book information. What made this more involved was the author information as it required iterating through the authors api in order to retrieve their names.
+
+This example using JSON is a good example of how many websites use JSON to share information online.
+
+# V. YAML
+
+## a. Installing YAML packages
+
+To ensure this will run, I've included an install line here.
+
+```{r installing yaml}
+install.packages("yaml")
+library("yaml")
+```
+
+## b. The handwritten YAML
+
+```YAML
+- Title: Cyrano de Bergerac
+  Author: Edmond Rostand
+  First_Publish_Date: 1920
+  Description: >-
+    Cyrano de Bergerac, verse drama in five acts by Edmond Rostand, performed in
+    1897 and published the following year. It was based only nominally on the
+    17th-century nobleman of the same name, known for his bold adventures and
+    large nose. Set in 17th-century Paris, the action revolves around the
+    emotional problems of the noble, swashbuckling Cyrano, who, despite his many
+    gifts, feels that no woman can ever love him because he has an enormous
+    nose. Secretly in love with the lovely Roxane, Cyrano agrees to help his
+    inarticulate rival, Christian, win her heart by allowing him to present
+    Cyrano’s love poems, speeches, and letters as his own work. Eventually
+    Christian recognizes that Roxane loves him for Cyrano’s qualities, not his
+    own, and he asks Cyrano to confess his identity to Roxane; Christian then
+    goes off to a battle that proves fatal. Cyrano remains silent about his own
+    part in Roxane’s courtship. As he is dying years later, he visits Roxane and
+    recites one of the love letters. Roxane realizes that it is Cyrano she loves,
+    and he dies content. (Britannica)
+  Revision_Number: 26
+  Latest_Revision_Number: 26
+- Title: The Good Earth
+  Author: >-
+    Pearl S. Buck, Nick Bertozzi, Ruth Goode, Donald F. Roden, Ernst Simon, and
+    Stephen Colbourn
+  First_Publish_Date: 1960
+  Description: >-
+    This tells the poignant tale of a Chinese farmer and his family in old
+    agrarian China. The humble Wang Lung glories in the soil he works, nurturing
+    the land as it nurtures him and his family. Nearby, the nobles of the House
+    of Hwang consider themselves above the land and its workers; but they will
+    soon meet their own downfall. Hard times come upon Wang Lung and his family
+    when flood and drought force them to seek work in the city. The working
+    people riot, breaking into the homes of the rich and forcing them to flee.
+    When Wang Lung shows mercy to one noble and is rewarded, he begins to rise in
+    the world, even as the House of Hwang falls.
+  Revision_Number: 14
+  Latest_Revision_Number: 14
+- Title: The life of Olaudah Equiano, or Gustavus Vassa, the African
+  Author: Olaudah Equiano, Robert J. Allison, and Rebecka Rutledge Fisher
+  First_Publish_Date: 1998
+  Description: >-
+    The Interesting Narrative of the Life of Olaudah Equiano, written in 1789,
+    details its writer's life in slavery, his time spent serving on galleys, the
+    eventual attainment of his own freedom and later success in business.
+    Including a look at how slavery stood in West Africa, the book received
+    favorable reviews and was one of the first slave narratives to be read widely.
+  Revision_Number: 20
+  Latest_Revision_Number: 20
+```
+
+## c. Loading our YAML file into an R dataframe
+
+Let's begin:
+
+```{r yaml data}
+yaml_url <- "https://raw.githubusercontent.com/riverar9/cuny-msds/main/data607/assignments/week-7/book_yaml_data.yaml" # nolint: line_length_linter.
+
+# Initialize an empty dataframe with our YAML fields
+yaml_df <- data.frame(
+  Title = character(),
+  Author = character(),
+  First_Publish_Date = character(),
+  Description = character(),
+  Revision_Number = numeric(),
+  Latest_Revision_Number = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Retrieve the data from github
+yaml_data <- yaml.load_file(yaml_url)
+
+# Iterate through each book and extract our information
+for (book_number in seq_along(yaml_data)) {
+  print(book_number)
+  row_values <- list(
+    Title = yaml_data[[book_number]]["Title"][[1]],
+    Author = yaml_data[[book_number]]["Author"][[1]],
+    First_Publish_Date = yaml_data[[book_number]]["First_Publish_Date"][[1]],
+    Description = yaml_data[[book_number]]["Description"][[1]],
+    Revision_Number = yaml_data[[book_number]]["Revision_Number"][[1]],
+    Latest_Revision_Number = yaml_data[[book_number]]["Latest_Revision_Number"][[1]] # nolint: line_length_linter.
+  )
+
+  names(row_values) <- names(yaml_df)
+
+  yaml_df <- rbind(
+    yaml_df,
+    data.frame(
+      row_values,
+      stringsAsFactors = FALSE
+    )
+  )
+}
+
+yaml_df
+
+str(yaml_df)
+```
+
+And here we were able to do the same with a YAML file. This required iterating through each element in the list (these are items that begin with a `-` character).
+
+# Conclusion
+
+Through this assignment, we were able to demonstrate the different source formats that data can come from. From here, one interesting observation was that the easiest to develop were the HTML and XML as the very specific structure allowed us to use some of the packages online.
+
+The JSON and YAML data were a bit more involved as it involved manually iterating through each element and extracting information for each book. That being said, we were able to practice a bit of real-world data collection by having to iterate through each author in addition to each book and submit `b * a` requests where b = books and a = authors.
