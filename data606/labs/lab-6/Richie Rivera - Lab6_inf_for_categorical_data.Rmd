@@ -1,6 +1,6 @@
 ---
 title: "Inference for categorical data"
-author: ""
+author: "Richie Rivera"
 output:
   pdf_document: default
 #   html_document:
@@ -30,9 +30,11 @@ in the companion package for OpenIntro resources, **openintro**.
 Let's load the packages.
 
 ```{r load-packages}
+set.seed(1994)
 library(tidyverse)
 library(openintro)
 library(infer)
+library(ggplot2)
 ```
 
 
@@ -44,9 +46,59 @@ You will be analyzing the same dataset as in the previous lab, where you delved 
 
 **Insert your answer here**
 
+```{r question 1}
+data("yrbss", package = "openintro")
+#?yrbss
+
+text_count <- yrbss |>
+  group_by(text_while_driving_30d) |>
+  summarise(observations = n())
+
+text_count
+```
+
+We can see here that a great deal of the students (827) have texted while driving everyday. That's no good!
+
+**End of your answer**
+
 2.  What is the proportion of people who have texted while driving every day in the past 30 days and never wear helmets?
 
 **Insert your answer here**
+
+```{r question 2}
+sample_pop <- yrbss |>
+  summarise(total_observations = n())
+
+risky_df <- yrbss |>
+  filter(text_while_driving_30d == 30) |>
+  filter(helmet_12m == "never")
+
+risky_people <- risky_df |>
+  summarise(risky_people = n())
+
+daily_driving_texting <- yrbss |>
+  filter(text_while_driving_30d == 30) |>
+  summarise(daily_texters = n())
+
+print(
+  paste(
+    round(100 * risky_people / daily_driving_texting, 2),
+    "% of the sample population who text everyday also never wear helmets.",
+    sep = ""
+  )
+)
+
+print(
+  paste(
+    round(100 * risky_people / sample_pop, 2),
+    "% of the entire sample population text everyday and also never wear helmets."
+  )
+)
+```
+
+It's very unlikely that someone texts everyday and never wears a helmet across the entire sample but if someone texts everyday then there is a much higher chance that they also never wear a helmet.
+
+**End of your answer**
 
 Remember that you can use `filter` to limit the dataset to just non-helmet wearers. Here, we will name the dataset `no_helmet`.
 
@@ -87,6 +139,27 @@ Note that since the goal is to construct an interval estimate for a proportion, 
 
 **Insert your answer here**
 
+$$
+MOE = Z * \sqrt{\dfrac{p(1-p)}{n}}
+$$
+
+with that formula:
+
+```{r question 3}
+z <- 1.96 # For 95% confidence
+p <- nrow(risky_df) / nrow(yrbss)
+
+moe <- z * sqrt(
+  (p * (1 - p)) / nrow(yrbss)
+)
+
+moe
+```
+
+From this, we can see that the margin of error is 0.0031.
+
+**End of your answer**
+
 4.  Using the `infer` package, calculate confidence intervals for two other 
     categorical variables (you'll need to decide which level to call "success", 
     and report the associated margins of error. Interpet the interval in context 
@@ -94,6 +167,44 @@ Note that since the goal is to construct an interval estimate for a proportion, 
     countries first, and then use these data sets to construct the confidence intervals.
 
 **Insert your answer here**
+
+What proportion of youths who text everyday are female?
+
+First we'll look at male vs female where being a Female is marked as a success:
+```{r question 4}
+
+daily_texters <- yrbss |>
+  filter(text_while_driving_30d == 30)
+
+daily_texters %>%
+  drop_na(gender) %>% # Drop missing values
+  specify(response = gender, success = "female") %>%
+  generate(reps = 1000, type = "bootstrap") %>%
+  calculate(stat = "prop") %>%
+  get_ci(level = 0.95)
+```
+
+From here we can see that we're 95% confident that the proportion of women youths who text and drive everyday is between 39.9% and 46.8%.
+
+Secondly, let's see the proportion of youths who do not watch tv and are hispanic. In this, being hispanic is considered a successs:
+
+```{r question 4.2}
+
+no_tv <- yrbss |>
+  filter(hours_tv_per_school_day == "do not watch")
+
+no_tv |>
+  drop_na(hispanic) |>
+  specify(response = hispanic, success = "hispanic") |>
+  generate(reps = 1000, type = "bootstrap") |>
+  calculate(stat = "prop") |>
+  get_ci(level = 0.95)
+
+```
+
+In this exmaple, we can see that we're 95% confident that the proportion of hispanic youths who watch no tv during the school week is between 23.3% and 27.3%
+
+**End of your answer**
 
 ## How does the proportion affect the margin of error?
 
@@ -109,6 +220,7 @@ Since the population proportion $p$ is in this $ME$ formula, it should make sens
 Since sample size is irrelevant to this discussion, let's just set it to some value ($n = 1000$) and use this value in the following calculations:
 
 ```{r n-for-me-plot}
+
 n <- 1000
 ```
 
@@ -133,6 +245,10 @@ ggplot(data = dd, aes(x = p, y = me)) +
     a given sample size, for which value of `p` is margin of error maximized?
 
 **Insert your answer here**
+
+`me` seems to correlate positively with `p` up until 0.5. After 0.5 the trend reverses and `me` is inversely correlated with `p`.
+
+**End of your answer**
 
 ## Success-failure condition
 
@@ -171,7 +287,7 @@ shinyApp(
         ggtitle(paste0("Distribution of p_hats, drawn from p = ", input$p, ", n = ", input$n))
     })
   },
-  
+
   options = list(height = 500)
 )
 ```
@@ -181,15 +297,27 @@ shinyApp(
 
 **Insert your answer here**
 
+The histogram plotted seems normal centered around a p of 0.1 with a tight spreadthat appears to be mostly around $p \pm .05$
+
+**End of your answer**
+
 7.  Keep $n$ constant and change $p$. How does the shape, center, and spread 
     of the sampling distribution vary as $p$ changes. You might want to adjust
     min and max for the $x$-axis for a better view of the distribution.
 
 **Insert your answer here**
 
+As we saw above for when $p=0.5$, the margin of error is greatest when $p=0.5$, which we can visually see using the app. As we approach $p=0.5$ we see that the spread incresases and then decreases as we move away from it.
+
+**End of your answer**
+
 8.  Now also change $n$. How does $n$ appear to affect the distribution of $\hat{p}$?
 
 **Insert your answer here**
+
+As we increase $n$, we can see that the spread decreases, which makes sense as margin of error has an inverse relationship with $n$.
+
+**End of your answer**
 
 * * *
 
@@ -205,12 +333,62 @@ For some of the exercises below, you will conduct inference comparing two propor
 
 **Insert your answer here**
 
-10.  Let's say there has been no difference in likeliness to strength train every
+For this, our $H_0$ is that those who sleep 10+ hours per day are equally likely to strength train every day of the week as the rest of the population.
+
+```{r question 9}
+no_sleepers <- yrbss |>
+  drop_na(school_night_hours_sleep) |>
+  drop_na(strength_training_7d) |>
+  filter(school_night_hours_sleep != "10+") |>
+  mutate(daily_workout = ifelse(strength_training_7d == 7, "yes", "no")) |>
+  select(school_night_hours_sleep, daily_workout)
+
+deep_sleepers <- yrbss |>
+  drop_na(school_night_hours_sleep) |>
+  drop_na(strength_training_7d) |>
+  filter(school_night_hours_sleep == "10+") |>
+  mutate(daily_workout = ifelse(strength_training_7d == 7, "yes", "no")) |>
+  select(school_night_hours_sleep, daily_workout)
+
+no_sleep_result <- no_sleepers |>
+  specify(response = daily_workout, success = "yes") |>
+  generate(reps = 1000, type = "bootstrap") |>
+  calculate(stat = "prop") |>
+  get_ci(level = 0.95)
+
+nosleep_lci <- no_sleep_result$lower_ci
+nosleep_uci <- no_sleep_result$upper_ci
+```
+
+For the population who do not sleep for 10+ hours a night, we are 95% confident that the proportion who also workout everyday is between `r 100*round(nosleep_lci,3)`% and `r 100*round(nosleep_uci,3)`%.
+
+```{r question 9 part 2}
+deep_sleep_result <- deep_sleepers |>
+  specify(response = daily_workout, success = "yes") |>
+  generate(reps = 1000, type = "bootstrap") |>
+  calculate(stat = "prop") |>
+  get_ci(level = 0.95)
+
+deepsleep_lci <- deep_sleep_result$lower_ci
+deepsleep_uci <- deep_sleep_result$upper_ci
+```
+
+For the group of youths who do sleep for 10+ hours, we are 95% confident that the proportion who also workout everyday is between `r 100*round(deepsleep_lci,3)`% and `r 100*round(deepsleep_uci,3)`%.
+
+With these results, we have evidence to reject the null hypothesis as we are 95% confident that the group who sleeps 10+ hours a day are `r 100*round(deepsleep_lci - nosleep_uci,3)`% more likely to strength train.
+
+**End of your answer**
+
+10. Let's say there has been no difference in likeliness to strength train every
     day of the week for those who sleep 10+ hours. What is the probablity that
     you could detect a change (at a significance level of 0.05) simply by chance?
     *Hint:* Review the definition of the Type 1 error.
 
 **Insert your answer here**
+
+By definition, with a significance level of 0.05 we will have a 5% chance to detect a change simply by chance.
+
+**End of your answer**
 
 11.  Suppose you're hired by the local government to estimate the proportion of 
     residents that attend a religious service on a weekly basis. According to 
@@ -222,5 +400,17 @@ For some of the exercises below, you will conduct inference comparing two propor
     error. This question does not require using a dataset.
 
 **Insert your answer here**
+
+Using the formula:
+
+$MOE = Z * \sqrt{\dfrac{p(1-p)}{n}}$
+
+and acknowledging that moe is maximum when $p=0.5$, we can solve for n by:
+
+$.01 = (1.96) *\sqrt{\dfrac{(0.5)(1-(0.5))}{n}}$
+
+Solving for n above, we get that the sample size will need to be at least 9604.
+
+**End of your answer**
 
 * * *
