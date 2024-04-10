@@ -8,9 +8,9 @@
 
 1. As we've seen in this class, there's no Data science without data. So, it is pretty intuitive that we need infrastrucure or plumbing to get our data where it can be used.
 
-2. Mage provides a framework to do just that. Being open source allows for it to be very transparent and quick iterations adding more funcitonality quickly.
+2. Mage provides a framework to do just that. Being open source allows for it to be transparent and have quick iterations adding more funcitonality often.
 
-3. It supports a wide array of ways to work with data. It natively has a way to connect to all of the major cloud architectures as well as a wide array of online, local, and unstructured data sources.
+3. It supports a wide array of ways to work with data. It natively has a way to connect to all of the major cloud architectures as well as a wide array of online, local, and unstructured data sources through both batch and streaming.
 
 4. It uses something called Coding Blocks which are it's bread and butter. Using coding blocks allows data engineers and scientists to see every step along the data pipeline and understand what is happening to the data. Additionally, there are visualizations layers built into each block which allows users to analyze the data intuitively as it's being processed.
 
