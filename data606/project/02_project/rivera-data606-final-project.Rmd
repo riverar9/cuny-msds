@@ -1,0 +1,322 @@
+---
+title: 'Project: Overall Safety of Vechicles'
+author: "Richie Rivera"
+date: "May 13, 2024"
+output:
+  beamer_presentation:
+    latex_engine: xelatex
+subtitle: "CUNY SPS: DATA606"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(lubridate)
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(zoo)
+library(psych)
+library(broom)
+library(formattable)
+```
+
+## Abstract
+
+Since 2012, cars have been growing larger and heavier and this phenomenon has has been reported upon more often. For example, [The Economist](https://www.economist.com/the-economist-explains/2024/03/11/why-american-cars-are-so-big) among other publications have published articles that are showing that cars across North American and Europe are growing larger.
+
+This is a worrying race to the bottom as larger vehicles are worse for the environment and are seemingly much less safe for society. Across the country, there are a growing number of local governments implementing vision 0 initiatives to reduce the number of vehicular related injuries and fatalities.
+
+In this report, we will use statistical methods to verify if larger vehicles are indeed statistically significantly more likely to injure or kill someone in the event of a crash.
+
+## Data
+
+We will be working with the ["Motor Vehicle Collisions - Crashes"](https://catalog.data.gov/dataset/motor-vehicle-collisions-crashes) dataset provided by the City of New York. This dataset contains vehicular crashes in NYC which were reported by NYPD from July 2012 through the end of April 2024. Each observation in the dataset represents one crash.
+
+This dataset contains 2,084,770 observations with  1,651 unique entries for vehicle class. For this analysis, we will be grouping each vehicle class into either "Passenger Vehicle", "SUV/Pickup Truck", or "Other". We will also observe the fields corresponding to the number of people killed and injured per crash.
+
+```{r Get our dataset, echo = FALSE}
+raw_filename = "Motor_Vehicle_Collisions_-_Crashes.csv"
+
+if (!file.exists(raw_filename)) {
+  library(httr)
+  
+  download_url <- "https://data.cityofnewyork.us/api/views/h9gi-nx95/rows.csv?accessType=DOWNLOAD"
+  
+  download_response <- GET(download_url)
+  
+  if (status_code(download_response) == 200) {
+    writeBin(content(download_response, "raw"), raw_filename)
+  } else {
+    warning("Download Failed. Status code: ", status_code(response))
+  }
+}
+
+crashes <- read.csv(
+  raw_filename
+)
+
+crashes$CRASH.DATE <- as.Date(crashes$CRASH.DATE, format = "%m/%d/%Y")
+
+large_vehicles <- c(
+  "Station Wagon/Sport Utility Vehicle",
+  "SPORT UTILITY / STATION WAGON",
+  "Pick-up Truck",
+  "VAN",
+  "Box Truck",
+  "SMALL COM VEH(4 TIRES)",
+  "PICK-UP TRUCK",
+  "LIVERY VEHICLE",
+  "Van"
+)
+
+passenger_vehicles <- c(
+  "Sedan",
+  "PASSENGER VEHICLE",
+  "4 dr sedan",
+  "Convertible",
+  "2 dr sedan"
+)
+
+crashes <- crashes |>
+  mutate(
+    vehicle_category = case_when(
+      VEHICLE.TYPE.CODE.1 %in% large_vehicles ~ "SUV/Pickup Truck",
+      VEHICLE.TYPE.CODE.1 %in% passenger_vehicles ~ "Passenger Vehicle",
+      TRUE ~ "Other"
+    )
+  ) 
+
+hurt_crashes <- crashes |>
+  mutate(
+    NUMBER.OF.PERSONS.KILLED = ifelse(is.na(NUMBER.OF.PERSONS.KILLED), 0, NUMBER.OF.PERSONS.KILLED),
+    NUMBER.OF.PEDESTRIANS.KILLED = ifelse(is.na(NUMBER.OF.PEDESTRIANS.KILLED), 0, NUMBER.OF.PEDESTRIANS.KILLED),
+    NUMBER.OF.CYCLIST.KILLED = ifelse(is.na(NUMBER.OF.CYCLIST.KILLED), 0, NUMBER.OF.CYCLIST.KILLED),
+    TOTAL.PERSONS.INJURED.KILLED = NUMBER.OF.PERSONS.KILLED + NUMBER.OF.PERSONS.INJURED
+  ) |>
+  filter(
+    TOTAL.PERSONS.INJURED.KILLED > 0
+  ) |>
+  select(
+    CRASH.DATE,
+    vehicle_category,
+    NUMBER.OF.PERSONS.KILLED,
+    NUMBER.OF.PERSONS.INJURED,
+    TOTAL.PERSONS.INJURED.KILLED
+  )
+
+```
+
+## Research Question
+
+Is there a statistically significant difference in incidents between vehicles of different body types when a crash results in an incident?
+
+For the purposes of this analysis, an incident is a crash where at least one person is injured or killed as a result of a crash.
+
+We will investigate this by looking at the sum of incidents (dependent variable) by vehicle class (independent variable).
+
+Our null hypothesis is that there is no difference in incident rates across different vehicle classes and our alternative hypothesis is that there is a difference in incident rates across different vehicle classes.
+
+
+
+## Summary Statistics
+
+\tiny
+```{r Summary Stats, style='font-size: smaller;'}
+stats_to_keep = c(
+  "mean",
+  "n",
+  "median",
+  "min",
+  "max"
+)
+
+summary_stats <- describeBy(
+  TOTAL.PERSONS.INJURED.KILLED + NUMBER.OF.PERSONS.KILLED + NUMBER.OF.PERSONS.INJURED ~ vehicle_category,
+  data = hurt_crashes,
+  skew = FALSE
+)
+
+summary_stats
+```
+
+
+## Histogram of Incidents
+
+\normalsize
+```{r filter dataset to remove non crash events}
+ggplot(
+  hurt_crashes,
+  aes(
+    x = TOTAL.PERSONS.INJURED.KILLED,
+    y = after_stat(count)/sum(after_stat(count))
+    )
+  ) +
+  geom_histogram(
+    binwidth = 1,
+    fill = "skyblue",
+    color = "black",
+    alpha = 0.7
+  ) +
+  facet_wrap(
+    ~ vehicle_category
+  ) +
+  labs(
+    title = "Histogram of Incidents by Vehicle Category",
+    x = "Number of Incidents",
+    y = "% of total Injury Crashes"
+  ) +
+  theme_minimal()
+```
+
+## Histogram of Log Incidents
+
+```{r log histogram}
+ggplot(
+  hurt_crashes |>
+    filter(
+      is.finite(log(TOTAL.PERSONS.INJURED.KILLED))
+    ),
+  aes(
+    x = log(TOTAL.PERSONS.INJURED.KILLED),
+    y = after_stat(count)/sum(after_stat(count))
+    )
+  ) +
+  geom_histogram(
+    binwidth = 1,
+    fill = "skyblue",
+    color = "black",
+    alpha = 0.7
+  ) +
+  facet_wrap(
+    ~ vehicle_category
+    #scales = "free_x"
+  ) +
+  labs(
+    title = "Histogram of Log Incidents by Vehicle Category",
+    x = "Log of Number of Incidents",
+    y = "% of total Crashes"
+  ) +
+  theme_minimal()
+```
+
+## QQ Plot of Log Incidents
+
+```{r qq plot}
+ggplot(
+  data =hurt_crashes,
+  aes(sample = log(TOTAL.PERSONS.INJURED.KILLED))
+) +
+  geom_line(stat = "qq") +
+  facet_wrap(
+    ~ vehicle_category
+  )
+```
+
+From here we can see that the distribution is somewhat normal.
+
+## Requirements for ANOVA
+
+1. The Observations are independent within and across groups
+2. The data within each group are nearly normal
+3. The variability across the groups is about equal
+
+We meet all of these requirements and can proceed with ANOVA.
+
+## ANOVA Results for log of Incidents
+
+\tiny
+```{r anova}
+log_hurt_crashes <- hurt_crashes |>
+  mutate(
+    log.TOTAL.PERSONS.INJURED.KILLED = log(TOTAL.PERSONS.INJURED.KILLED)
+  ) |>
+  select(
+    log.TOTAL.PERSONS.INJURED.KILLED,
+    vehicle_category
+  ) |>
+  filter(
+    !is.na(log.TOTAL.PERSONS.INJURED.KILLED) &
+    is.finite(log.TOTAL.PERSONS.INJURED.KILLED)
+  )
+
+injuries_aov <- aov(
+  log.TOTAL.PERSONS.INJURED.KILLED ~ vehicle_category,
+  data = log_hurt_crashes
+)
+  
+tidy(injuries_aov)
+```
+
+\normalsize
+From the summary above, we can see that the F-Value of 2031 indicates that there is a difference between the number of injuries/fatalities and the p.value of essentially 0 signifies that the result is statistically significant.
+
+## Regression of the Results
+
+\tiny
+```{r building a regression model}
+reg_model <- lm(
+  log.TOTAL.PERSONS.INJURED.KILLED ~ vehicle_category,
+  data = log_hurt_crashes
+)
+
+summary(reg_model)
+```
+\normalsize
+From here we can see that the coefficient for the Other category is the highest, followed by Passenger Vehicles, and SUV/Pickup Truck. Although we observe this result, our Adjusted R-squared of 0.008 suggests that only 0.8% of the observed variance is due to the vehicle category. Interpreting our p value of essentially 0, we can also know that this result is statistically significant.
+
+## Conclusion
+
+Recalling the means from before, we found that passenger vehicles had the greatest mean of number of incidents. So these results would imply that passenger vehicles are more likely to result in an incidents (1.390 vs 1.377).
+
+As reported by NHTSA, there were 42,939 people killed and 2,497,657 people injured in car crashes across the country in 2021. If we assume that lives are precious then understanding the human cost associated with what vehicles we choose to drive is crucial.
+
+## Total Monthly Crashes by Vehicle Category
+
+```{r plot crashes by year, echo = FALSE}
+monthly_crashes_summary <- crashes |>
+  mutate(
+    crash_month = floor_date(CRASH.DATE, "month"),
+    crash_year = floor_date(CRASH.DATE, "year")
+  ) |>
+  filter(crash_month < "2019-01-01") |>
+  group_by(
+    crash_month,
+    crash_year,
+    vehicle_category
+  ) |>
+  summarise(
+    crash_count = n(),
+    .groups = "drop"
+  )
+
+ggplot(
+  monthly_crashes_summary,
+  aes(
+    x = crash_month,
+    y = crash_count,
+    color = vehicle_category
+  )
+) +
+  geom_line(
+    linewidth = 1.5
+  ) +
+  labs(
+    x = "Date",
+    y = "Number of Crashes",
+    color = "Vehicle Category"
+  ) +
+  theme_minimal()
+```
+
+## Limitations & Next Steps
+
+This analysis was conducted only looking at New York City. These results would likely vary across different levels of government and locations.
+
+As a next step, an interesting observation is that although the mean injury per crash for SUV/Pickup Trucks are lower than those for Passenger Cars, it's noted that the fatality rate is higher (0.006235 vs 0.004825) which could provide evidence that they are more fatal. This would require further investigation to show evidence for or against that idea.
+
+## References
+
+- https://catalog.data.gov/dataset/motor-vehicle-collisions-crashes
+  - Accessed May 3, 2024
+- https://www.economist.com/the-economist-explains/2024/03/11/why-american-cars-are-so-big 
+  - Accessed May 3, 2024
