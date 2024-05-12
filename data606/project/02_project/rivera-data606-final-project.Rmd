@@ -22,7 +22,7 @@ library(formattable)
 
 ## Abstract
 
-Since 2012, cars have been growing larger and heavier and this phenomenon has has been reported upon more often. For example, [The Economist](https://www.economist.com/the-economist-explains/2024/03/11/why-american-cars-are-so-big) among other publications have published articles that are showing that cars across North American and Europe are growing larger.
+Since 2012, cars have been growing larger and heavier and this phenomenon has been reported more often. For example, [The Economist](https://www.economist.com/the-economist-explains/2024/03/11/why-american-cars-are-so-big) among other publications have published articles that are showing that vehicles across North America and Europe are growing larger.
 
 This is a worrying race to the bottom as larger vehicles are worse for the environment and are seemingly much less safe for society. Across the country, there are a growing number of local governments implementing vision 0 initiatives to reduce the number of vehicular related injuries and fatalities.
 
@@ -108,9 +108,9 @@ hurt_crashes <- crashes |>
 
 ## Research Question
 
-Is there a statistically significant difference in incidents between vehicles of different body types when a crash results in an incident?
+**Is there a statistically significant difference in incidents between vehicles of different body types when a crash results in an incident?**
 
-For the purposes of this analysis, an incident is a crash where at least one person is injured or killed as a result of a crash.
+For the purpose of this analysis, an incident is defined as a crash where at least one person is injured or killed as a result of a crash.
 
 We will investigate this by looking at the sum of incidents (dependent variable) by vehicle class (independent variable).
 
@@ -248,7 +248,7 @@ tidy(injuries_aov)
 ```
 
 \normalsize
-From the summary above, we can see that the F-Value of 2031 indicates that there is a difference between the number of injuries/fatalities and the p.value of essentially 0 signifies that the result is statistically significant.
+From the summary above, the F-Value of 2031 indicates there is evidence for a difference between the number of incidents and the p.value of essentially 0 is evidence the result is statistically significant.
 
 ## Regression of the Results
 
@@ -262,13 +262,13 @@ reg_model <- lm(
 summary(reg_model)
 ```
 \normalsize
-From here we can see that the coefficient for the Other category is the highest, followed by Passenger Vehicles, and SUV/Pickup Truck. Although we observe this result, our Adjusted R-squared of 0.008 suggests that only 0.8% of the observed variance is due to the vehicle category. Interpreting our p value of essentially 0, we can also know that this result is statistically significant.
+From the regression results, we can see the coefficient for the Passenger Vehicles category is the highest, followed by SUV/Pickup Truck, and finally Other. Although we observe this result, our Adjusted R-squared of 0.008 suggests only 0.8% of the observed variance is due to the vehicle category. Interpreting our p value of essentially 0, we also have evidence that this result is statistically significant.
 
 ## Conclusion
 
-Recalling the means from before, we found that passenger vehicles had the greatest mean of number of incidents. So these results would imply that passenger vehicles are more likely to result in an incidents (1.390 vs 1.377).
+Recalling the means from before, we found that passenger vehicles had the greatest mean number of incidents. So these results provide evidence that crashes involving passenger vehicles are more likely to involve an incident (1.390 vs 1.377).
 
-As reported by NHTSA, there were 42,939 people killed and 2,497,657 people injured in car crashes across the country in 2021. If we assume that lives are precious then understanding the human cost associated with what vehicles we choose to drive is crucial.
+As reported by NHTSA, there were 42,939 people killed and 2,497,657 people injured in car crashes across the country in 2021. If we believe that every life is important, it's essential to realize how the choice of vehicles can affect people's lives
 
 ## Total Monthly Crashes by Vehicle Category
 
@@ -310,9 +310,10 @@ ggplot(
 
 ## Limitations & Next Steps
 
-This analysis was conducted only looking at New York City. These results would likely vary across different levels of government and locations.
+This analysis was performed using data for crashes only looking at New York City. These results would likely vary across different levels of government and locations.
 
-As a next step, an interesting observation is that although the mean injury per crash for SUV/Pickup Trucks are lower than those for Passenger Cars, it's noted that the fatality rate is higher (0.006235 vs 0.004825) which could provide evidence that they are more fatal. This would require further investigation to show evidence for or against that idea.
+
+As a next step, it would be interesting to investigate the fatality rates across different vehicles. From the statistical summary, the fatality rate for SUV/Pickup Trucks is higher (0.006235 vs 0.004825). If the difference in mean fatality rates across vehicle types is statistically significant, then it can be evidence that SUV/Pickup Trucks are more fatal.
 
 ## References
 
