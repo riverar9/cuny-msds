@@ -1,7 +1,7 @@
 # Slide 1: Title
 Hi my Name is Richie and today we will be going over the saftety of vehicles. As some of you may be aware, NYC and other cities across the country are implementing Vision 0 initiatives in order to reduce the number of people seriously hurt or killed by cars to 0.
 
-Independently, it's been reported on more frequently that cars are growing larger and heavier. In addition to the obvious eviornmental cost there seems to be a human cost associated with this. In this report, we will undertake a statistical analysis to invesitgate whether crashes involving larger vehicles have a statistically significant increased liklihood to cause injury or death.
+There are a growing number of articles that suggest that cars are growing larger and heavier. In addition to the obvious eviornmental cost there seems to be a human cost associated with this. In this report, we will undertake an observational statistical study to invesitgate whether crashes involving larger vehicles have a statistically significant increased liklihood to cause injury or death.
 
 # Slide 2: Abstract
 
@@ -10,10 +10,8 @@ Independently, it's been reported on more frequently that cars are growing large
 # Slide 3: Data
 
 - We will be analyzing the "Motor Vehicle Collisions - Crashes" dataset provided by the City of New York.
-- This dataset spans from July 2012 through the end of April 2024 and contains records of vehicular crashes reported by the NYPD.
+- This dataset contains 2,084,770 observations, spanning from July 2012 through the end of April 2024 and contains records of vehicular crashes reported by the NYPD.
 - Each observation in the dataset represents a single crash incident.
-
-- The dataset comprises a total of 2,084,770 observations.
 - Among these, there are 1,651 unique entries for vehicle class, indicating the diversity of vehicle types involved in the crashes.
 - Key variables of interest include the number of people killed and injured in each crash.
 
