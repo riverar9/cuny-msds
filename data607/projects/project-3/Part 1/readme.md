@@ -1,1 +1,0 @@
-To create the ER Diagram I used [dbdiagram.io](https://dbdiagram.io/) which did a great job!

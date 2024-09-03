@@ -1,0 +1,190 @@
+---
+title: "Data 607 - Meetup 3 Extra Credit"
+author: "Richie R."
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Overview
+For this extra credit assignment, we will be calculating each players' expected score and the difference between their calculated score and their actual score. Then, we will list the 5 players who most overperformed relative to their expected score and the top 5 players who have underperformed relative to their expected score.
+
+## 1. What is ELO?
+
+By using the below sources, I was able to learn the following about ELO and their scores:
+
+- [singingbanana's youtube video](https://www.youtube.com/watch?v=AsYfbmp0To0)
+- [Wikipedia's overview](https://en.wikipedia.org/wiki/Elo_rating_system)
+
+
+Elo is a system that is used to rate players skill levels. This model assumes that actual skill and performance results from a player vary along a normal distribution and that each players' normal distribution has an average that is somewhere along that bell curve.
+
+A concept that allows this is the Expected Score. The **Expected Score** is essentially the Probability of winning plus half the Probability of drawing.
+
+You can calculate Expected score by:
+
+$$
+S_{exp} = \dfrac{1}{1+10^{(\dfrac{R_{opponent}-R_{player}}{400})}}
+$$
+$$
+S_{exp} = \text{Expected Score}
+$$
+$$
+R_{player} = \text{Rating of the player of interest}
+$$
+$$
+R_{opponent} = \text{Rating of the opponent}
+$$
+
+With the definition, let's create a function that calculates expected score:
+
+```{r function for expected score}
+calculate_expected_score <- function(r_player, r_opponent) {
+  denom <- 1 + 10^((r_opponent - r_player) / 400)
+
+  return(1 / denom)
+}
+```
+
+Additionally, with the ELO framework, we can calculate the new rating of a player by using this expected formula. This can be done with:
+
+$$
+R_{new} = R_{old} + 32(S_{act} - S_{exp})
+$$
+$$
+R_{new} = \text{The player's new/updated rating}
+$$
+$$
+R_{old} = \text{The player's rating before the match}
+$$
+$$
+S_{act} = \text{The player's actual score}
+$$
+
+Now with this defined, let's create a function that performs this calculation:
+
+```{r function to calculate new elo rating}
+calculate_new_rating <- function(r_old, s_act, s_exp) {
+  return(r_old + (32 * (s_act - s_exp)))
+}
+```
+
+## 2. Getting the matches data
+
+Luckily, we can reuse my results from [project 1](https://github.com/riverar9/cuny-msds/tree/main/data607/projects/project-1):
+
+```{r getting player data}
+players_df <- read.csv("https://raw.githubusercontent.com/riverar9/cuny-msds/main/data607/projects/project-1/players_data.csv") #nolint
+
+head(players_df)
+```
+
+```{r getting match data}
+matches_df <- read.csv("https://raw.githubusercontent.com/riverar9/cuny-msds/main/data607/projects/project-1/match_data.csv") # nolint
+
+head(matches_df)
+```
+
+# 3. Calculating expected scores
+With the data, we can simply apply our calculate_expected_score function on the dataset to calculate our expected score. But to do so, we first need to ensure that player score and opponent score are in the same dataset. Just like with the project, by joining players_df to matches_df, we will automatically remove matches that didn't happen:
+
+```{r get player score and opponent score in matches_df}
+library(dplyr)
+
+full_data <- matches_df |>
+  select(player_id, opponent_id)
+
+player_rating_data <- players_df |>
+  select(player_id, player_points, player_prerating, player_name)
+
+opponent_rating_data <- players_df |>
+  rename(
+    opponent_id = player_id,
+    opponent_prerating = player_prerating
+  ) |>
+  select(opponent_id, opponent_prerating)
+
+full_data <- merge(
+  full_data,
+  player_rating_data,
+  by = "player_id"
+)
+
+full_data <- merge(
+  full_data,
+  opponent_rating_data,
+  by = "opponent_id"
+)
+
+head(full_data)
+```
+
+With this data, we can calculate the expected score of each match:
+
+```{r apply the expected score calculation}
+full_data$expected_score <- calculate_expected_score(
+  full_data$player_prerating,
+  full_data$opponent_prerating
+)
+
+head(full_data)
+```
+
+And with the expected score of each match, we can aggregate by player to get their respective expected and actual scores:
+
+```{r get total expected score}
+final_scores <- full_data |>
+  select(player_name, player_prerating,player_points, expected_score) |> # nolint
+  group_by(player_name, player_prerating, player_points) |>
+  summarise(total_expected_score = sum(expected_score))
+
+head(final_scores)
+```
+
+Now let's calculate the total score and see those who overperformed and underperformed:
+
+```{r overperformed}
+score_diffs <- final_scores |>
+  mutate(score_diff = player_points - total_expected_score) |>
+  arrange(desc(score_diff)) |>
+  select(player_name, player_points, total_expected_score, score_diff)
+
+head(score_diffs)
+```
+
+With this, we can see that Aditya Bajaj overperformed the most with a difference of 4.05. Following her are:
+
+2. Zachary James Houghton
+3. Anvit Rao
+4. Jacob Alexander Lavalley
+5. Amiyatosh Pwnanandam
+
+For those who underperformed, we can look at the same dataset but use the "tail()" function:
+
+```{r underperformed}
+tail(score_diffs)
+```
+
+From here we have to read the data from the bottom to the top but we can see that Loren Schwiebert underperformed the most with a difference of -2.78. Following her are:
+
+2. George Avery Jones
+3. Jared Ge
+4. Rishi Shetty
+5. Joshua David Lee
+
+Lastly, and for fun, let's calculate each players new rating and see who gained the most ratings during this tournament:
+
+```{r}
+score_diffs$new_rating <- calculate_new_rating(
+  score_diffs$player_prerating,
+  score_diffs$player_points,
+  score_diffs$total_expected_score
+)
+
+score_diffs <- score_diffs |>
+  select(player_name, player_prerating, new_rating) |>
+  mutate(rating_change = new_rating - player_prerating) |>
+  arrange(desc(rating_change))
+
+head(score_diffs)
+```
