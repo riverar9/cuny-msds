@@ -1,0 +1,184 @@
+---
+title: "DATA 624 - Homework 1"
+author: "Richie Rivera"
+output:
+  pdf_document: default
+---
+
+# Question 2.1
+Explore the following four time series: Bricks from aus_production, Lynx from pelt, Close from gafa_stock, Demand from vic_elec.
+
+```{r library, echo=FALSE, message=FALSE, warning=FALSE}
+# Installing the package
+#install.packages("fpp3", dependencies = TRUE)
+
+# Importing the library
+library("fpp3")
+
+```
+```{r loading data}
+# Loading the datasets
+data(aus_production)
+data(pelt)
+data(gafa_stock)
+data(vic_elec)
+```
+
+#### A: Use ? (or help()) to find out about the data in each series.
+
+
+```{r aus_production, eval=FALSE}
+?aus_production
+```
+
+```{r pelt, eval=FALSE}
+?pelt
+```
+
+```{r gafa_stock, eval=FALSE}
+?gafa_stock
+```
+
+```{r vic_elec, eval=FALSE}
+?vic_elec
+```
+
+#### B: What is the time interval of each series?
+
+| Series            | Time Interval | Description |
+|----------         |----------     | ---------- |
+| aus_production    | Quarterly     | Quarterly production of selected commodities in Australia. |
+| pelt              | Annual        | Pelt trading records |
+| gafa_stock        | Daily         | GAFA stock prices |
+| vic_elec          | Half-Hourly   | Half-hourly electricity demand for Victoria, Australia |
+
+
+#### C: Use autoplot() to produce a time plot of each series.
+
+```{r question1c, fig.width=10, fig.height=5}
+autoplot(aus_production, Bricks) + ggtitle(
+  "Quarterly Brick production of selected commodities in Australia."
+) + geom_line(color = "blue", size = 1.5) +
+  theme(axis.text = element_text(size = 12))
+
+autoplot(pelt, Lynx) + ggtitle(
+  "Lynx Pelt trading records"
+) + geom_line(color = "red", size = 1.5) +
+  theme(axis.text = element_text(size = 12))
+
+autoplot(gafa_stock, Close) + ggtitle(
+  "GAFA stock Close prices"
+) + theme(axis.text = element_text(size = 12))
+
+autoplot(vic_elec, Demand) + ggtitle(
+  "Half-hourly electricity demand for Victoria, Australia"
+) + geom_line(color = "orange", size = 0.5) +
+  theme(axis.text = element_text(size = 12))
+```
+
+#### D: For the last plot, modify the axis labels and title.
+
+```{r question1d, fig.width=10, fig.height=5}
+autoplot(vic_elec, Demand) + ggtitle(
+  "Half-hourly electricity demand for Victoria, Australia"
+) + geom_line(color = "green", size = 0.5) +
+  theme(axis.text = element_text(size = 12), aspect.ratio = 0.5) +
+  xlab("Half-Hour Interval") +
+  ylab("Demand [MWh]")
+```
+
+# Question 2.2
+Use filter() to find what days corresponded to the peak closing price for each of the four stocks in gafa_stock.
+
+```{r question2}
+# Importing dplyr
+library(dplyr)
+
+head(gafa_stock)
+
+gafa_stock |>
+  select(
+    Symbol,
+    Date,
+    Close
+  ) |>
+  group_by(Symbol) |>
+  filter(
+    Close == max(Close)
+  )
+```
+
+# Question 2.3
+Download the file tute1.csv from the book website, open it in Excel (or some other spreadsheet application), and review its contents. You should find four columns of information. Columns B through D each contain a quarterly series, labelled Sales, AdBudget and GDP. Sales contains the quarterly sales for a small company over the period 1981-2005. AdBudget is the advertising budget and GDP is the gross domestic product. All series have been adjusted for inflation.
+
+#### A. You can read the data into R with the following script
+```{r question2.3a}
+# importing readr
+library(readr)
+
+# Reading and viewing the csv
+tute1 <- read_csv("https://raw.githubusercontent.com/riverar9/cuny-msds/main/data624-predictive-analytics/homework/homework-1/tute1.csv")
+View(tute1)
+```
+
+#### B. Convert the data to time series
+```{r question2.3b}
+# Converting the data into a timeseries
+mytimeseries <- tute1 |>
+  mutate(Quarter = yearquarter(Quarter)) |>
+  as_tsibble(index = Quarter)
+
+head(mytimeseries)
+```
+
+#### C. Construct time series plots of each of the three series
+
+```{r question2.3c}
+# Create a series of plots using facet_grid
+mytimeseries |>
+  pivot_longer(-Quarter) |>
+  ggplot(aes(x = Quarter, y = value, colour = name)) +
+  geom_line() +
+  facet_grid(name ~ ., scales = "free_y")
+```
+
+Check what happens when you don’t include facet_grid()
+
+```{r question2.3c2}
+mytimeseries |>
+  pivot_longer(-Quarter) |>
+  ggplot(aes(x = Quarter, y = value, colour = name)) +
+  geom_line()
+```
+
+Without facet_grid, the plots are all on the same chart. In my opinion this is more helpful as it provides immediate insight into the relative value of these timeseries against eachother.
+
+# Question 2.4
+The USgas package contains data on the demand for natural gas in the US.
+
+#### A. Install the USgas package.
+
+#### B. Create a tsibble from us_total with year as the index and state as the key.
+
+#### C. Plot the annual natural gas consumption by state for the New England area (comprising the states of Maine, Vermont, New Hampshire, Massachusetts, Connecticut and Rhode Island).
+
+# Question 2.5
+
+#### A. Download tourism.xlsx from the book website and read it into R using readxl::read_excel().
+
+#### B. Create a tsibble which is identical to the tourism tsibble from the tsibble package.
+
+#### C. Find what combination of Region and Purpose had the maximum number of overnight trips on average.
+
+#### D. Create a new tsibble which combines the Purposes and Regions, and just has total trips by State.
+
+# Question 2.8
+Use the following graphics functions: autoplot(), gg_season(), gg_subseries(), gg_lag(), ACF() and explore features from the following time series: “Total Private” Employed from us_employment, Bricks from aus_production, Hare from pelt, “H02” Cost from PBS, and Barrels from us_gasoline.
+
+#### A. Can you spot any seasonality, cyclicity and trend?
+
+#### B. What do you learn about the series?
+
+#### C. What can you say about the seasonal patterns?
+
+#### D. Can you identify any unusual years?
