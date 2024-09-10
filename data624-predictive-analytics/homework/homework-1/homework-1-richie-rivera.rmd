@@ -2,6 +2,8 @@
 title: "DATA 624 - Homework 1"
 author: "Richie Rivera"
 output:
+  html_document:
+    df_print: paged
   pdf_document: default
 ---
 
