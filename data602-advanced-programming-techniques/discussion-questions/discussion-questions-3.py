@@ -89,14 +89,18 @@ print(
 
 # 6. Using the following dictionary .. (Use python to solve for the answer.)
 dict = {"Course": "DATA 606", "Program": "MSDS", "School": "CUNYSPS"}
+
 # a. What is the name of the course?
 print(f"The name of this course is '{dict['Course']}'.")
+
 # b. Change the course to DATA602
 dict['Course'] = 'DATA602'
 print(f"The new name of this course is '{dict['Course']}'.")
+
 # c. Add new information to the dictionary - "Professor" with "Schettini"
 dict['Professor'] = 'Schettini'
 print(f"The key 'Professor' has been added with the value '{dict['Professor']}'.")
+
 # d. Using the len function, find how many keys there are in the dictionary. 
 print(f"There are {len(dict.keys())} keys in 'dict'.")
 
