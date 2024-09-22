@@ -1,0 +1,589 @@
+---
+title: "DATA 624 - Homework 3"
+author: "Richie Rivera"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r, message=FALSE, warning=FALSE}
+# Importing the library
+library("fpp3")
+```
+
+# Question 5.1
+Produce forecasts for the following series using whichever of `NAIVE(y)`, `SNAIVE(y)` or `RW(y ~ drift())` is more appropriate in each case:
+
+#### A. Australian Population (global_economy)
+
+```{r}
+# Getting the global_economy data
+data(global_economy)
+head(global_economy)
+
+# Filter to Australian population
+aus_pop <- global_economy |>
+  filter(Country == "Australia") |>
+  select(Population)
+
+# Plot the data
+autoplot(aus_pop)
+```
+
+Because the data seems to simply grow, I would honestly start with a linear model to see how well it fits the data.
+
+```{r}
+aus_pop_lm <- aus_pop |>
+  model(TSLM(
+    Population ~ Year
+  ))
+
+report(aus_pop_lm)
+
+aus_pop %>%
+  autoplot(Population) +
+  autolayer(
+    fitted(aus_pop_lm),
+    series = "Fitted",
+    linetype = "dashed"
+  ) +
+  labs(
+    title = "Actual vs Fitted Population",
+    y = "Population",
+    x = "Year"
+  ) +
+  guides(color = guide_legend(title = "Series"))
+```
+
+From here, we can see that this can be well predicted with a linear model. Although that isn't an option, this does inform me that a `NAIVE()` model with drift would be good here (`RW(~drift)`). This is because:
+1. A simple `NAIVE()` would show the value fixed at the last known datapoint.
+2. A `SNAIVE(y)` would be seasonal, which the graph above proves that this is simply just growing.
+3. This leaves us with a `NAIVE()` model with drift (`RW(y~drift)`) as it allows the forecast to grow/decrease over time.
+
+
+```{r}
+# Split the data into a train dataset
+aus_pop_train <- aus_pop |>
+  filter_index("1960" ~ "2000")
+
+# Fit a drift model
+aus_pop_drift_fit <- aus_pop_train |>
+  model(RW(Population ~ drift()))
+
+# make predictions with the model for the next 17 years
+aus_pop_drift_forecast <- aus_pop_drift_fit |>
+  forecast(h = 17)
+
+# Plot forecast against the actuals
+aus_pop_drift_forecast |>
+  autoplot(aus_pop_train, level = NULL) +
+  autolayer(
+    filter_index(aus_pop, "2001" ~ .),
+    colour = "black"
+  ) +
+  labs(
+    y = "Population",
+    x = "Year",
+    title = "NAIVE drift forecast of Australian population"
+  ) +
+  guides(
+    colour = guide_legend(title = "forecast")
+  )
+```
+
+
+I'll be using the framework above for the following plots and refer to reasons by 1, 2, or 3.
+
+#### B. Bricks (aus_production)
+
+```{r}
+# load the data
+data(aus_production)
+
+# inspect the data
+head(aus_production)
+
+# Remove unnecessary fields and remove NA datapoints
+bricks <- aus_production |>
+  select(Bricks) |>
+  drop_na()
+
+autoplot(bricks)
+```
+
+This data looks like a random walk with some seasonality. With that, I think it makes sense to use a `SNAIVE()` model here:
+
+```{r}
+# Split the data into a train dataset
+bricks_train <- bricks |>
+  filter_index("1956" ~ "1999")
+
+# Fit a snaive model
+bricks_snaive_fit <- bricks_train |>
+  model(SNAIVE(Bricks))
+
+# make predictions with the model for the next 18 quarters
+bricks_snaive_forecast <- bricks_snaive_fit |>
+  forecast(h = 22)
+
+# Plot forecast against the actuals
+bricks_snaive_forecast |>
+  autoplot(bricks_train, level = NULL) +
+  autolayer(
+    filter_index(bricks, "2000" ~ .),
+    colour = "black"
+  ) +
+  labs(
+    y = "Population",
+    x = "Year & Quarter",
+    title = "SNAIVE forecast of Australian Brick Production"
+  ) +
+  guides(
+    colour = guide_legend(title = "forecast")
+  )
+```
+
+This model is not perfect but we can see from the blue line that the values don't seem to typically deviate too far from the predictions.
+
+#### C. NSW Lambs (aus_livestock)
+
+```{r}
+# load the data
+data(aus_livestock)
+
+# inspect the data
+head(aus_livestock)
+
+# Remove unnecessary fields and remove NA datapoints
+lambs <- aus_livestock |>
+  filter(
+    Animal == "Lambs",
+    State == "New South Wales"
+  ) |>
+  select(Count)
+
+autoplot(lambs)
+```
+
+This data looks more like a random walk, so I'll continue with a `NAIVE()` model:
+
+```{r}
+# Split the data into a train dataset
+lambs_train <- lambs |>
+  filter_index("1956" ~ "2015")
+
+# Fit a naive model
+lambs_naive_fit <- lambs_train |>
+  model(NAIVE())
+
+# make predictions with the model for the next 48 months (4 years)
+lambs_naive_forecast <- lambs_naive_fit |>
+  forecast(h = 12 * 4)
+
+# Plot forecast against the actuals
+lambs_naive_forecast |>
+  autoplot(lambs_train, level = NULL) +
+  autolayer(
+    filter_index(lambs, "2016" ~ .),
+    colour = "black"
+  ) +
+  labs(
+    y = "Animal Slaughter Count",
+    x = "Year & Month",
+    title = "NAIVE forecast of Australian Lambs Slaughtered"
+  ) +
+  guides(
+    colour = guide_legend(title = "forecast")
+  )
+```
+
+
+#### D. Household wealth (hh_budget).
+
+Running a `?hh_budget` I find that this is a percentage and has multiple countries in it. For this model, I've decided to only include Australia:
+
+```{r}
+# load the data
+data(hh_budget)
+
+# inspect the data
+head(hh_budget)
+
+# Remove unnecessary fields and remove NA datapoints
+hh_wealth <- hh_budget |>
+  filter(
+    Country == "Australia"
+  ) |>
+  select(Wealth)
+
+autoplot(hh_wealth)
+```
+
+From this graph, I don't see any seasonality but I do see that there are windows where trends stay consistent. Looking at the most recent datapoints,  I can see that it's on a growth trajectory. For this reason, I believe a `RW(y ~ drift())` will be most applicable here:
+
+```{r}
+# Split the data into a train dataset
+hh_wealth_train <- hh_wealth |>
+  filter_index("1960" ~ "2013")
+
+# Fit a drift model
+hh_wealth_drift_fit <- hh_wealth_train |>
+  model(RW(Wealth ~ drift()))
+
+# make predictions with the model for the next 5 years
+hh_wealth_drift_forecast <- hh_wealth_drift_fit |>
+  forecast(h = 4)
+
+# Plot forecast against the actuals
+hh_wealth_drift_forecast |>
+  autoplot(hh_wealth_train, level = NULL) +
+  autolayer(
+    filter_index(hh_wealth, "2014" ~ .),
+    colour = "black"
+  ) +
+  labs(
+    y = "Wealth",
+    x = "Year",
+    title = "NAIVE drift forecast of Australian Wealth"
+  ) +
+  guides(
+    colour = guide_legend(title = "forecast")
+  )
+```
+
+The model has the right idea, but it's not really good at capturing the magnitude of the growth.
+
+#### E. Australian takeaway food turnover (aus_retail).
+
+```{r}
+# load the data
+data(aus_retail)
+
+# inspect the data
+head(aus_retail)
+
+# Remove unnecessary fields and remove NA datapoints
+turnover <- aus_retail |>
+  index_by(Month) |>
+  summarise(tot_turnover = sum(Turnover)) |>
+  ungroup() |>
+  select(tot_turnover) |>
+  as_tsibble(index = Month)
+
+autoplot(turnover)
+```
+
+This is seasonal and shows growth. For this it'd be convenient if we can combine `SNAIVE(y)` and a `RW(y ~ drift())`. But given the options we have, I would actually think that a `SNAIVE(y)` would be better for shorter prediction windows. If we were going with a larger prediction window, then it'd be likely better to go with a drift model.
+
+```{r}
+# Split the data into a train dataset
+turnover_train <- turnover |>
+  filter_index("1982" ~ "2017")
+
+# Fit a snaive model
+turnover_snaive_fit <- turnover_train |>
+  model(SNAIVE(tot_turnover))
+
+# make predictions with the model for the next 24 months
+turnover_snaive_forecast <- turnover_snaive_fit |>
+  forecast(h = 24)
+
+# Plot forecast against the actuals
+turnover_snaive_forecast |>
+  autoplot(turnover_train, level = NULL) +
+  autolayer(
+    filter_index(turnover, "2018" ~ .),
+    colour = "black"
+  ) +
+  labs(
+    y = "Turnover",
+    x = "Year & Month",
+    title = "SNAIVE forecast of total Australian retail turnover"
+  ) +
+  guides(
+    colour = guide_legend(title = "forecast")
+  )
+```
+
+Actually, the `SNAIVE()` did a wonderful job at capturing this trend! I believe that if I were to increase the prediction window, it would not perform as well. Here's some code of me testing that;
+
+```{r}
+# Split the data into a train dataset
+turnover_train <- turnover |>
+  filter_index("1982" ~ "2010")
+
+# Fit a snaive model
+turnover_snaive_fit <- turnover_train |>
+  model(SNAIVE(tot_turnover))
+
+# make predictions with the model for the next 8 years
+turnover_snaive_forecast <- turnover_snaive_fit |>
+  forecast(h = 8 * 12)
+
+# Plot forecast against the actuals
+turnover_snaive_forecast |>
+  autoplot(turnover_train, level = NULL) +
+  autolayer(
+    filter_index(turnover, "2011" ~ .),
+    colour = "black"
+  ) +
+  labs(
+    y = "Turnover",
+    x = "Year & Month",
+    title = "SNAIVE forecast of total Australian retail turnover"
+  ) +
+  guides(
+    colour = guide_legend(title = "forecast")
+  )
+```
+
+Just as I thought, this doesn't perform as well for longer prediction windows. But it has extracted the seasonality very well.
+
+# Question 5.2
+Use the Facebook stock price (data set gafa_stock) to do the following:
+
+#### A. Produce a time plot of the series.
+Since no metric was defined, I decided to use the Close price:
+```{r}
+# importing the data
+data(gafa_stock)
+
+# inspecting the data
+head(gafa_stock)
+
+# Filtering the data to facebook
+fb <- gafa_stock |>
+  filter(Symbol == "FB") |>
+  select(Close) |>
+  mutate(Date = row_number()) |>
+  rename(trading_day = Date)
+
+autoplot(fb)
+```
+#### B. Produce forecasts using the drift method and plot them.
+
+```{r}
+# Fit a drift model
+fb_drift_fit <- fb |>
+  model(RW(Close ~ drift()))
+
+# make predictions with the model for the next 58 trading days
+fb_drift_forecast <- fb_drift_fit |>
+  forecast(h = 60)
+
+# Plot forecast against the actuals
+fb_drift_forecast |>
+  autoplot(fb, level = NULL) +
+  autolayer(
+    filter_index(fb, "1201" ~ .),
+    colour = "black"
+  ) +
+  labs(
+    y = "Stock Close Price",
+    x = "Trading day index (0 = 2014-01-02)",
+    title = "NAIVE drift forecast of Facebook Stock Close Price"
+  ) +
+  guides(
+    colour = guide_legend(title = "forecast")
+  )
+```
+
+#### C. Show that the forecasts are identical to extending the line drawn between the first and last observations.
+```{r}
+fb_first_last <- data.frame(
+  x1 = head(fb, 1)$trading_day,
+  x2 = tail(fb, 1)$trading_day,
+  y1 = head(fb, 1)$Close,
+  y2 = tail(fb, 1)$Close
+)
+
+fb_drift_forecast |>
+  autoplot(fb, level = NULL) +
+  autolayer(
+    filter_index(fb, "1201" ~ .),
+    colour = "black"
+  ) +
+  labs(
+    y = "Stock Close Price",
+    x = "Trading day index (0 = 2014-01-02)",
+    title = "NAIVE drift forecast of Facebook Stock Close Price"
+  ) +
+  guides(
+    colour = guide_legend(title = "forecast")
+  ) +
+  geom_segment(
+    data = fb_first_last,
+    aes(x = x1, xend = x2, y = y1, yend = y2),
+    color = "red", size = 1
+  )
+```
+
+The graph above makes it pretty obvious that the blue line is a continuation of the red  line where the red line is the linear interpolation between the first and last point.
+
+#### D. Try using some of the other benchmark functions to forecast the same data set. Which do you think is best? Why?
+
+Using all the methods we've been exposed to:
+
+```{r}
+fb_all_fit <- fb |>
+  model(
+    Mean = MEAN(Close),
+    `Naïve` = NAIVE(Close),
+    Drift = NAIVE(Close ~ drift())
+  )
+
+fb_all_forecast <- fb_all_fit |>
+  forecast(h = 60)
+
+fb_all_forecast |>
+  autoplot(fb, level = NULL) +
+  autolayer(
+    filter_index(fb, "1201" ~ .),
+    colour = "black"
+  ) +
+  labs(
+    x = "Trading day index",
+    y = "Stock Close Price",
+    title = "3 Forecasting Methods on Facebook Stock Close Price"
+  ) +
+  guides(colour = guide_legend(title = "Forecast"))
+```
+
+Given these forecasts, I would likely pick the drift one. This is because it seems to have a random walk and it does seem to typically grow over time (we all know that stocks only go up...). For this reason, a drift forecast seems the most applicable.
+
+# Question 5.3
+Apply a seasonal naïve method to the quarterly Australian beer production data from 1992. Check if the residuals look like white noise, and plot the forecasts. The following code will help.
+
+
+```{r, eval=FALSE}
+# Extract data of interest
+recent_production <- aus_production |>
+  filter(year(Quarter) >= 1992)
+# Define and estimate a model
+fit <- recent_production |> model(SNAIVE(Beer))
+# Look at the residuals
+fit |> gg_tsresiduals()
+# Look a some forecasts
+fit |> forecast() |> autoplot(recent_production)
+```
+What do you conclude?
+
+By looking at these graphs:
+1. The mean of the residuals is close to zero
+2. The time plot of the residuals show that the variation stays fairly consistent across the historical data.
+3. The histogram seems to be a little normal but not very normal. To me it looks like a bimodal distribution.
+
+With this, we can conclude that forecasts built using this method will likely be good.
+
+# Question 5.4
+Repeat the previous exercise using the Australian Exports series from `global_economy` and the Bricks series from `aus_production`. Use whichever of `NAIVE()` or `SNAIVE()` is more appropriate in each case.
+
+```{r}
+aus_exports <- global_economy |>
+  filter(Country == "Australia") |>
+  select(Exports)
+
+head(aus_exports)
+
+autoplot(aus_exports)
+```
+
+Given the above, Australian Exports from `global_economy` should use `NAIVE()`. From a previous exercise, we determined that using `SNAIVE()` for bricks was a good choice:
+
+```{r}
+# Define and estimate a model
+aus_exports_fit <- aus_exports |>
+  model(NAIVE(Exports))
+# Look at the residuals
+aus_exports_fit |>
+  gg_tsresiduals()
+# Look a some forecasts
+aus_exports_fit |>
+  forecast() |>
+  autoplot(aus_exports)
+```
+
+Looking at Australian Exports `NAIVE()` model, we can see that:
+1. The mean of the residuals is close to 0
+2. The time series plot of residuals has a few sharp increases and decreases, specifically in the mid 2000s and 2010 but it typically has fairly consistent variation.
+3. The histogram of residuals is very normal
+
+With this, we can conclude that forecasts built using this method will likely be pretty good.
+
+```{r}
+# Look at the residuals
+bricks_snaive_fit |>
+  gg_tsresiduals()
+# Look a some forecasts
+aus_exports_fit |>
+  forecast() |>
+  autoplot(aus_exports)
+```
+
+From the graphs above we can see that the distribution of residuals is left skewed. Additionally, it doesn't seem that our mean of residuals is close to 0.
+Lastly, the ACF is showing a sinusoidal pattern which indicates that the data is autocorrelated with its lags.
+
+# Question 5.7
+
+For your retail time series (from Exercise 7 in Section 2.10):
+
+#### A. Create a training dataset consisting of observations before 2011 using
+
+```{r, eval=FALSE}
+set.seed(2111994)
+
+myseries <- aus_retail |>
+  filter(`Series ID` == sample(aus_retail$`Series ID`, 1))
+
+head(myseries)
+
+myseries_train <- myseries |>
+  filter(year(Month) < 2011)
+```
+#### B. Check that your data have been split appropriately by producing the following plot.
+
+```{r, eval=FALSE}
+autoplot(myseries, Turnover) +
+  autolayer(myseries_train, Turnover, colour = "red")
+```
+
+The data does seem split by a pre and post 2011..
+
+#### C. Fit a seasonal naïve model using SNAIVE() applied to your training data (myseries_train).
+
+```{r, eval=FALSE}
+fit <- myseries_train |>
+  model(SNAIVE(Turnover))
+```
+
+#### D. Check the residuals.
+Do the residuals appear to be uncorrelated and normally distributtionted?
+```{r, eval=FALSE}
+fit |> gg_tsresiduals()
+```
+
+These residuals seem highly correlated as we can see from the acf chart and they do have a bit of a normal distribution to them as we can see in the distribution of residuals.
+Also, the mean of the innovation residuals does not seem to be near 0.
+
+#### E. Produce forecasts for the test data
+
+```{r, eval=FALSE}
+fc <- fit |>
+  forecast(new_data = anti_join(myseries, myseries_train))
+
+fc |> autoplot(myseries)
+```
+
+#### F. Compare the accuracy of your forecasts against the actual values.
+
+```{r, eval=FALSE}
+fit |> accuracy()
+fc |> accuracy(myseries)
+```
+
+Observing the accuracy, we can see that the MAPE on the training dataset is 10.2 while it is 18.8 for the test dataset. This indicates to me that this model is particularly bad on new data. Because the model isn't very good at predicting on new data, it could be overfit to the training dataset.
+
+#### G. How sensitive are the accuracy measures to the amount of training data used?
+
+The accuracy measures are very sensitive to the amount of training data as the more training data will typically increase the accuracy of the model built. Although, especially with timeseries forecasting, there can be a point of reversal as there can be trends that aren't accounted for or larger, more foundational shifts which the model may not pick up. Additionally, and as alluded to in the last question, there is a chance of overfitting which is a greater risk the more data that is input. Conversely, with too little data the model will not have enough of an opportunity to build the model and train itself leading to an underfit model.
