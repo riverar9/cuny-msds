@@ -149,10 +149,54 @@ na_by_class |>
   labs(x = "Variables", y = "Class", fill = "Proportion of NA")
 ```
 
-Judging from the heatmap above, the `2-4-injury`, `cyst-nematode`, `diaporthe-pod-&-stem-blight`, and `herbicide-injury` have many predictors that are always missing while `phytophtoria-rot` has some entries are missing but not all.
+Judging from the heatmap above, the `2-4-d-injury`, `cyst-nematode`, `diaporthe-pod-&-stem-blight`, and `herbicide-injury` have many predictors that are always missing while `phytophthora-rot` has some entries are missing but not all.
 
 
 #### (c) Develop a strategy for handling missing data, either by eliminating predictors or imputation.
 
-Given our heatmap from before, I would recommend removing the `2-4-d-injury`, `cyst-nematode`, `diaporthe-pod-&-stem-blight`, and `herbicide-injury` classes as there are too many nulls from the dataset.
+It depends, for the classes that are missing this data it could be that the `<NA>` could encode other information that isn't specified in the `Soybean` dataset.
 
+That being said, for this specific dataset and given our heatmap from before, I would recommend removing the `2-4-d-injury`, `cyst-nematode`, and `herbicide-injury` classes as there are too many predictors in the dataset with only `<NA>` values.
+
+```{r}
+library(fpp3)
+Soybean |>
+  filter(Class == "phytophthora-rot") |>
+  pivot_longer(
+    cols = -Class,
+    names_to = "var",
+    values_to = "val",
+    values_ptypes = list(val = character())
+  ) |>
+  select(-Class) |>
+  ggplot(
+    aes(val)
+  )  +
+  facet_wrap(~var) +
+  geom_density() +
+  geom_bar() +
+  coord_flip()
+```
+
+After seeing this chart, I would recommend to remove the `phytophthora-rot` class as well as the majority of values for this class are one value or `<NA>`.
+
+```{r}
+Soybean |>
+  filter(Class == "diaporthe-pod-&-stem-blight") |>
+  pivot_longer(
+    cols = -Class,
+    names_to = "var",
+    values_to = "val",
+    values_ptypes = list(val = character())
+  ) |>
+  select(-Class) |>
+  ggplot(
+    aes(val)
+  )  +
+  facet_wrap(~var) +
+  geom_density() +
+  geom_bar() +
+  coord_flip()
+```
+
+Looking at the plot for `diaporthe-pod-&-stem-blight`, I see that almost all of the entries where there are more values than just `<NA>` are very concentrated in one category. I would recommend removing this class as well for this reason.
