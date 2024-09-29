@@ -1,0 +1,158 @@
+---
+title: "DATA 624 - Homework 4"
+author: "Richie Rivera"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+These questions come from the [Applied Predictive Modeling](http://appliedpredictivemodeling.com/) book.
+
+# Question 3.1
+
+The UC Irvine Machine Learning Repository6 contains a data set related to glass identification. The data consist of 214 glass samples labeled as one of seven class categories. There are nine predictors, including the refractive index and percentages of eight elements: Na, Mg, Al, Si, K, Ca, Ba, and Fe. 
+
+The data can be accessed via: 
+
+```{r}
+library(mlbench)
+data(Glass)
+str(Glass)
+# ?Glass
+```
+
+#### (a) Using visualizations, explore the predictor variables to understand their distributions as well as the relationships between predictors.
+
+```{r, fig.height=10, fig.width=10}
+library(GGally)
+library(ggplot2)
+library(dplyr)
+
+Glass |>
+  ggpairs()
+```
+
+Above I am using `ggpairs()` as it will return a lot of useful visualizations for our data. Along the diagonal, we can see the distribution of each feature across this dataset. Each histogram is relative to the maximum and minimum values present in the provided data.
+
+By looking into here, I see:
+
+1. `RI` - is right skewed
+2. `Na` - is fairly normally distributed
+3. `Mg` - seems to have a good portion of low values and then many more values that are close to the upper bound
+4. `Al` - is a little normal but right skewed
+5. `Si` - the main component in glass. This seems fairly normal
+6. `K` - is mostly distributed across very low values. This one seems to have a few outliers which we can see in the charts below it.
+7. `Ca` - is right skewed and fairly normal
+8. `Ba` - has almsot all of it's values at or very near to 0 with a few observations that have higher compositions.
+9. `Fe` - values are all very low (less than 0.5) but they are more varied in their distribution than `Ba`.
+10. `Type` - Because this is a categorical value, it's diagonal component shows a bar chart of frequency. Using that we see that types 1, 2, and 7 are the most common entries. 
+
+Moving towards the top right of the diagonal, we can see a series of correlation scores. This shows how well each feature is correlated with others. With that I see:
+
+- `RI` and `Al` are fairly negatively correlated with a -40.7% correlation coefficient.
+- `RI` and `Si` are fairly negatively correlated with a -54.2% correlation coefficient.
+- `RI` and `Ca` are highly correlated with a 81% correlation coefficient.
+- `Mg` and `Al` are fairly negatively correlated with a -48.2% correlation coefficient.
+- `Mg` and `Ca` are fairly negatively correlated with a -44.4% correlation coefficient.
+- `Mg` and `Ba` are fairly negatively correlated with a -49.2% correlation coefficient.
+- The rest of the pairs have poor correlations.
+
+The last thing I would like to take a look at are the `facet_wrapped()` histograms at the bottom. That shows the distributions of each element across each category in `Type`. Using that a few notable takeaways are:
+
+- The distribution of `Na` is different for type 7 than the rest. Although types 1-6 are similar.
+- The distribution of `Mg` is very right skewed for types 1, 2, and 3. For type 7, they all seems to be highly concentrated at 0.
+- The vast majority of non-zero `Fe` values are concentrated in types 1 and 2.
+- The vast majority of non-zero `Ba` values are concentrated in type 7.
+
+#### (b) Do there appear to be any outliers in the data? Are any predictors skewed?
+
+The skew is mentioned in the above answer for question (a). Regarding outliers, there seems to be outliers in:
+
+- `K` has value(s) which are much higher than the rest
+- `Fe` has value(s) which are much higher than the rest
+
+#### (c) Are there any relevant transformations of one or more predictors that might improve the classification model?
+
+Firstly I would attempt to correct the skew. I woud attempt to do so by using a box-cox transformation. By getting the guerro optimized lambda, I can refer to [the lookup here](https://www.statisticshowto.com/probability-and-statistics/normal-distributions/box-cox-transformation/) to find the appropriate function for this transformation.
+
+Next I would handle outliser, likely by removing the high outliers for `K` and `Ba`. I've chosen those because these high outliers don't seem to have any predictive power for determining type. To contrast, `Mg` has a few very low outliers but they seem to correlate with Type 7 and their predictive power seems useful. 
+
+# Question 3.2
+
+The soybean data can also be found at the UC Irvine Machine Learning Repository. Data were collected to predict disease in 683 soybeans. The 35 predictors are mostly categorical and include information on the environmental conditions (e.g., temperature, precipitation) and plant conditions (e.g., left spots, mold growth). The outcome labels consist of 19 distinct classes. 
+
+The data can be loaded via:
+
+```{r}
+library(mlbench)
+data(Soybean)
+# ?Soybean
+```
+
+#### (a) Investigate the frequency distributions for the categorical predictors. Are any of the distributions degenerate in the ways discussed earlier in this chapter?
+
+```{r, fig.height=20, fig.width=10}
+library(tidyr)
+
+Soybean |>
+  gather() |>
+  ggplot(
+    aes(value)
+  ) +
+  facet_wrap(
+    ~ key,
+    scales = "free",
+    ncol = 3
+  ) +
+  geom_density() +
+  geom_bar() +
+  coord_flip()
+```
+
+With the definition of degenerates as that there is typically very few categories value with little variance (IE, 2 options and one option is strongly dominant), we can see that this is the case for `leaf.malf`, `mycelium`, `sclerotia`, and `mold.growth`.
+
+#### (b) Roughly 18 % of the data are missing. Are there particular predictors that are more likely to be missing? Is the pattern of missing data related to the classes?
+
+```{r}
+Soybean |>
+  select(- Class) |>
+  gather() |>
+  group_by(key) |>
+  summarise(
+    prop_NA = sum(is.na(value)) / n()
+  ) |>
+  arrange(desc(prop_NA))
+```
+
+the predictors that are most likely to be missing are `hail`, `lodging`, `seed.tmt`, and `server` with a missing rate of 17.7%.
+
+```{r}
+library(reshape2)
+na_by_class <- Soybean |>
+  group_by(Class) |>
+  summarise(across(everything(), ~ sum(is.na(.)) / n()), .groups = "drop")
+
+na_by_class |>
+  melt(id.vars = "Class") |>
+  ggplot(aes(x = variable, y = Class, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(
+    low = "white",
+    mid = "yellow",
+    high = "red",
+    midpoint = 0.5, limits = c(0, 1)) +
+  geom_tile(fill = NA, color = "black", size = 1) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+  ) +
+  labs(x = "Variables", y = "Class", fill = "Proportion of NA")
+```
+
+Judging from the heatmap above, the `2-4-injury`, `cyst-nematode`, `diaporthe-pod-&-stem-blight`, and `herbicide-injury` have many predictors that are always missing while `phytophtoria-rot` has some entries are missing but not all.
+
+
+#### (c) Develop a strategy for handling missing data, either by eliminating predictors or imputation.
+
+Given our heatmap from before, I would recommend removing the `2-4-d-injury`, `cyst-nematode`, `diaporthe-pod-&-stem-blight`, and `herbicide-injury` classes as there are too many nulls from the dataset.
+
