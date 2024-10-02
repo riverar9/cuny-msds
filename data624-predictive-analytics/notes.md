@@ -78,3 +78,40 @@ ACF provides a plot of correlation scores with respect to certain lags.
 - x-axis is the lags and the y is the pearson correlation score from 0-1
 - **ACF should replace gg_lag(). Provides the same insight**
 
+# 2024 10 01
+
+## Homework
+I can resubmit my last question to go over whether or not my normalization techniques worked.
+
+## Presentation 
+
+First presenter - Heleine Fouda
+1. Simple Exponential Smoothing (SES)
+    -   What is it? a remedy to to the extreems of the naive and average methods.
+    -    Best for stawtinary data with no trend or seasonality
+    -   Method using exponentonal (?) weights to
+    -   Gives more weight to more recent observations
+    -   You get to choose an alpha parameter which controls the smoothing
+        -   The closer to 1, the more weight is given to the most recent datapoint
+    -   Best alpha is the one that has the lowest MSE
+2. HTM
+    - I missed this one
+3. Damped Trends Method (DTM)
+    -   Another method, must read up more.
+
+Second Presenter - Matthew Tillmawitz
+1. Exponential smoothing with seasonality
+    - can be both additive and multiplicitative
+        - additive is expressed in absolute terms. Will always sum up close to 0
+        - multiplicative is relative. Will always sum up to the seasonal period
+        - This is most prevelant when seeing the seasonal and remainder components in the model output
+            -One is multiplied together, the other is added. 3*n < n^3
+Third Presenter - Lewris Mota
+
+- I had to poop. I'm sorry Lewris.
+
+Fourth Presenter - Kim Koon
+
+- State Space equations and etc
+
+Fifth Presenter - Marjete
