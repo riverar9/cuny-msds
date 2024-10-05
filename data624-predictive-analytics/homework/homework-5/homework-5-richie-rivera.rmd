@@ -10,7 +10,7 @@ output:
 ## Question 8.1
 Consider the the number of pigs slaughtered in Victoria, available in the aus_livestock dataset.
 
-1. Use the ETS() function to estimate the equivalent model for simple exponential smoothing. Find the optimal values of $α$ and $ℓ_0$, and generate forecasts for the next four months.
+1. Use the ETS() function to estimate the equivalent model for simple exponential smoothing. Find the optimal values of $\alpha$ and $\lambda_0$, and generate forecasts for the next four months.
 ```{r, fig.width= 10, fig.height=10}
 library(fpp3)
 
@@ -44,7 +44,7 @@ piggy_fit |>
 piggy_fc
 ```
 
-From the above report, we can see that the optimal $α$ is `0.322` and the optimal $ℓ_0$ is `100646.6`.
+From the above report, we can see that the optimal $\alpha$ is `0.322` and the optimal $\lambda_0$ is `100646.6`.
 
 2. Compute a 95% prediction interval for the first forecast using $\hat{y} ± 1.96s$ where $s$ is the standard deviation of the residuals. Compare your interval with the interval produced by R.
 
