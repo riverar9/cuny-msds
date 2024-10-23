@@ -115,3 +115,26 @@ Fourth Presenter - Kim Koon
 - State Space equations and etc
 
 Fifth Presenter - Marjete
+
+
+# 2024 10 22
+
+## Key Points
+
+- The project involves real, messy data. Students must identify missing or erroneous data and create a forecast. 
+    - **Focus**: Professor cares more about the thought process than the final results.
+    - **Explanation**: Students should clearly explain their reasoning behind decisions such as handling outliers or model selection.
+    - Consider if transformations and normalization are needed to improve accuracy.
+
+- **Extra Credit**: Outstanding work on the water flow assignment can earn up to 3% extra credit for the entire class.
+
+- **Machine Learning Focus**: 
+    - The class is now shifting to machine learning techniques.
+    - The professor will walk through a framework developed at Ford, covering:
+        1. **Supervised Learning**: Predicts a target variable (e.g., sales, inventory).
+        2. **Unsupervised Learning**: Clusters similar data points.
+        3. **Reinforcement Learning**: Trial and error to optimize decision-making.
+
+- **Generalization over Overfitting**:
+    - Avoid overfitting to past data; models should generalize to future data for reliable predictions.
+    - Overfitting leads to poor performance on new data, which could be risky for business decisions.
