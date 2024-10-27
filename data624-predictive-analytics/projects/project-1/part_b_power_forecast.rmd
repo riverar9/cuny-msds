@@ -1,0 +1,254 @@
+---
+title: "DATA 624 - Project 1: Power Forecast"
+author: "Richie Rivera"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+From the assignment description:
+
+> Part B consists of a simple dataset of residential power usage for January 1998 until December 2013.  Your assignment is to model these data and a monthly forecast for 2014.  The data is given in a single file.  The variable ‘KWH’ is power consumption in Kilowatt hours, the rest is straight forward.
+
+# 1. Loading the data
+
+```{r imports, message=FALSE, warning=FALSE}
+# Loading packages
+library(readxl)
+library(fpp3)
+library(dplyr)
+library(tsibble)
+library(zoo)
+library(readr)
+```
+
+```{r loading power_data}
+# Specify the working directory
+setwd("F:/git/cuny-msds/data624-predictive-analytics/projects/project-1")
+
+power <- read_excel("data/ResidentialCustomerForecastLoad-624.xlsx")
+
+# rename columns
+colnames(power) <- c(
+  "casesequence",
+  "month",
+  "kwh"
+)
+
+#rename columns
+glimpse(power)
+```
+
+# 2. Investigating the Power Data
+Looking at the values in the data, it looks like the column `month` represents the month but it is currently represented as a string and will need to represent a date.
+
+```{r plot_power_data, fig.width=10}
+power_ts <- power |>
+  mutate(month = yearmonth(month)) |>
+  as_tsibble(
+    index = month
+  ) |>
+  select(-casesequence)
+
+power_ts |>
+  autoplot()
+
+power_ts |>
+  filter(is.na(kwh))
+
+power_ts |>
+  arrange(kwh)
+```
+
+Fixing the date allowed us to plot this timeseries and we can see that it is highly seasonal with not much of a trend. There also seems to be one outlier in July 2010 where the power has dropped off significantly. Additioanlly, there's a gap in September 2010, which we will need to fill.
+
+# 3. Data Pre-Processing
+
+We found two items that will need to address to fix this time series.
+
+1. We must fill the gap that exists in September 2008
+2. We must decide how we wish to handle the outlier in July 2010
+
+For the gap, we can perform a simple linear interpolation. This seems valid as it seems that the power was going to begin the descending part of the cycle.
+
+```{r fill_gaps, fig.width=10}
+power_ts <- power_ts |>
+  mutate(
+    kwh = na.approx(kwh, na.rm = FALSE)
+  )
+
+power_ts |>
+  autoplot()
+
+power_ts |>
+  filter(is.na(kwh))
+```
+
+We can now see that we've filled the gap with a value between August 2008 and October 2008.
+
+Judging from the trends, it looks like the outlier is potentially a data collection issue. To fix this, I think it'd be worthwhile to also perform a linear interpolation as we can interpret this as a black swan event and it is not very helpful for our model:
+
+```{r fix_the_outlier, fig.width=10}
+power_ts <- power_ts |>
+  mutate(
+    kwh = if_else(kwh == 770523, NA_real_, kwh)
+  ) |>
+  mutate(
+    kwh = na.approx(kwh, na.rm = FALSE)
+  )
+
+power_ts |>
+  autoplot()
+```
+
+This timeseries seems much better. It also seems that there could be a slight upward trend now which was obfuscated by the outlier.
+
+Although the data seems pretty normally distributed right now, we will pull the guerro lambda to see if there is a transformation we can do which will make this data more normally distributed:
+
+```{r check_guerro}
+kwh_lambda <- power_ts |>
+  features(kwh, features = guerrero) |>
+  pull(lambda_guerrero)
+```
+
+With a $\lambda$ of `r round(kwh_lambda, 2)`, we can refer to [the chart here](https://www.statisticshowto.com/probability-and-statistics/normal-distributions/box-cox-transformation/) and see that this transform is most similar to taking the negative half root or: 
+
+$$
+\frac{1}{\sqrt{Y}}
+$$
+
+This operation will need to be undone at the end so our model outputs are real. This can be undone by using the below equation:
+
+$$
+\frac{1}{y^2}
+$$
+
+```{r perform the change}
+power_ts <- power_ts |>
+  mutate(
+    kwh_tranformed = kwh ^ -0.5
+  )
+
+power_ts |>
+  autoplot(kwh_tranformed)
+```
+
+# 4 Developing the model
+
+With our data transformed, we can look at a `STL()` decomposition of our data:
+
+```{r stl_decomp_of_power, fig.width=10}
+power_ts |>
+  model(
+    stl = STL(kwh_tranformed)
+  ) |>
+  components() |>
+  autoplot()
+```
+
+From this decomposition we can see that the data is relatively stationary but the most impactful component is the seasonal component.
+
+we have a few applicable univariate models we can apply here:
+
+1. `SNAIVE()` - Because there is a strong seasonal component and not much trend. I doubt this will be the best model as this model will apply the seasonal component to the last observed value.
+2. `ETS()` (Holt-Winters Additive Method) - For the same reason as `SNAIVE()`. This model may perform well as the seasonal variation is roughly constant. The multiplicative method is better for seasonal effects which increase over time which we can see from the `STL()` decomposition isn't the case here.
+3. `ARIMA()` - With the built in differencing using the KPSS unit root test, an `ARIMA()` model is also applicable here.
+
+Now we can create our training and testing splits, we will have our testing split be a holdout period of 1 year:
+
+```{r create_the_models}
+# Training subset
+power_train <- power_ts |>
+  filter(
+    month < yearmonth("2013-01-01")
+  )
+
+# Testing subset
+power_test <- power_ts |>
+  filter(
+    month >=  yearmonth("2013-01-01")
+  )
+
+# Fitting the models
+power_fits <- power_train |>
+  model(
+    snaive = SNAIVE(kwh_tranformed),
+    auto_ETS = ETS(kwh_tranformed),
+    holt_winters_add = ETS(
+      kwh_tranformed ~ error("A") + trend("N") + season("A")
+    ),
+    arima = ARIMA(kwh_tranformed)
+  )
+
+# creating the forecast over the training period
+power_fcs <- power_fits |>
+  forecast(h = nrow(power_test))
+
+# Charting the forecast
+power_fcs |>
+  autoplot(power_test) |>
+  labs(
+    y = "Transformed KWH Usage",
+    title = "Forecasts of Tranformed KWH Usage (Jan 2013)"
+  )
+```
+
+As the chart above shows, we are seeing that each of the models have their predicted values within the confidence band, suggesting that the models fit fairly well to the data. For some more rigorous tests:
+
+```{r getting_model_tests}
+power_fits |>
+  report()
+
+power_fcs |>
+  accuracy(power_test)
+```
+
+With the two tables above, we can note the following:
+
+- The ARIMA model has the lowest AIC, suggesting that it may be the best fit of the models tested
+- The `SNAIVE()` model has the lowest MAPE, although the `ARIMA()` model is very close
+
+With those two observations, I believe it'd be best to use the `ARIMA()` model as it has evidence of being the best fit and performs almost as well as all the other models.
+
+```{r looking_at_arima}
+power_fits |>
+  select(.model = "arima") |>
+  report()
+```
+
+The `ARIMA()` model selected is a $ARIMA(1,0,0)(2,1,0)[12] w/ drift$. Now that we have our model selected, we will retrain our our model with the entire dataset:
+
+```{r retrain_with_whole_datset, fig.width=10}
+power_final_fit <- power_ts |>
+  model(
+    arima = ARIMA(kwh_tranformed ~ pdq(1, 0, 0) + PDQ(2, 1, 0, period = 12))
+  )
+
+power_final_fc <- power_final_fit |>
+  forecast(h = 12)
+
+power_final_fit |>
+  select(.model = "arima") |>
+  gg_tsresiduals() +
+  labs(
+    title = "ARIMA(1,0,0)(2,1,0)[12] w/ drift Model of transformed KWH residuals"
+  )
+```
+
+From the residuals plot above, we can see that the residuals seem normally distributed and two of the autocorrelations exceed the critical value. With this, we can proceed with this model and save the results.
+
+```{r save_model_results}
+power_final_fc |>
+  as_tibble() |>
+  filter(.model == "arima") |>
+  mutate(
+    power_lower_ci_95 = 1 / (hilo(kwh_tranformed)$lower ^ 2),
+    power_prediction = 1 / (mean(kwh_tranformed) ^ 2),
+    power_upper_ci_95 = 1 / (hilo(kwh_tranformed)$upper ^ 2)
+  ) |>
+  select(month, power_prediction, power_lower_ci_95, power_upper_ci_95) |>
+  write_csv("forecasts/power_forecast_ci_ARIMA.csv")
+```
+
+With our output, I would expect that the power consumption to be between the 95% confidence interval provided.
