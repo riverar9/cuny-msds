@@ -1,10 +1,6 @@
 ---
 title: "DATA 624 - Project 1: Power Forecast"
 author: "Richie Rivera"
-output:
-  html_document:
-    df_print: paged
-  pdf_document: default
 ---
 
 From the assignment description:
@@ -61,7 +57,7 @@ power_ts |>
   arrange(kwh)
 ```
 
-Fixing the date allowed us to plot this timeseries and we can see that it is highly seasonal with not much of a trend. There also seems to be one outlier in July 2010 where the power has dropped off significantly. Additioanlly, there's a gap in September 2010, which we will need to fill.
+Fixing the date allowed us to plot this timeseries and we can see that it is highly seasonal with not much of a trend. There also seems to be one outlier in July 2010 where the power has dropped off significantly. Additionally, there's a gap in September 2010, which we will need to fill.
 
 # 3. Data Pre-Processing
 
@@ -104,7 +100,7 @@ power_ts |>
 
 This timeseries seems much better. It also seems that there could be a slight upward trend now which was obfuscated by the outlier.
 
-Although the data seems pretty normally distributed right now, we will pull the guerro lambda to see if there is a transformation we can do which will make this data more normally distributed:
+Although the data seems pretty normally distributed right now, we will pull the guerrero lambda to see if there is a transformation we can do which will make this data more normally distributed:
 
 ```{r check_guerro}
 kwh_lambda <- power_ts |>
@@ -124,7 +120,7 @@ $$
 \frac{1}{y^2}
 $$
 
-```{r perform the change}
+```{r perform the change, fig.width=10}
 power_ts <- power_ts |>
   mutate(
     kwh_tranformed = kwh ^ -0.5
@@ -157,7 +153,7 @@ we have a few applicable univariate models we can apply here:
 
 Now we can create our training and testing splits, we will have our testing split be a holdout period of 1 year:
 
-```{r create_the_models}
+```{r create_the_models, fig.width=10}
 # Training subset
 power_train <- power_ts |>
   filter(
@@ -217,7 +213,7 @@ power_fits |>
   report()
 ```
 
-The `ARIMA()` model selected is a $ARIMA(1,0,0)(2,1,0)[12] w/ drift$. Now that we have our model selected, we will retrain our our model with the entire dataset:
+The `ARIMA()` model selected is an $ARIMA(1,0,0)(2,1,0)[12] w/ drift$. Now that we have our model selected, we will retrain our model with the entire dataset:
 
 ```{r retrain_with_whole_datset, fig.width=10}
 power_final_fit <- power_ts |>
@@ -237,6 +233,24 @@ power_final_fit |>
 ```
 
 From the residuals plot above, we can see that the residuals seem normally distributed and two of the autocorrelations exceed the critical value. With this, we can proceed with this model and save the results.
+
+The final forecast is shown below:
+
+```{r plot_final_forecast, fig.width=10}
+power_final_fc |>
+  autoplot(
+    power_ts |>
+      filter(
+        month >= yearmonth("2010-01-01")
+      )
+  ) +
+  labs(
+    title = "ARIMA Forecast of Power consumption (Jan 2010 - Dec 2014)",
+    y = "Transformed KWH"
+  )
+```
+
+The above plot shows the transformed KWH. In the supplied excel document, the dependent has been un-transformed to match the same measurement that was provided.
 
 ```{r save_model_results}
 power_final_fc |>
