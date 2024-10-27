@@ -443,7 +443,7 @@ atm3_final_fc |>
     cash_upper_ci_95 = hilo(cash)$upper
   ) |>
   select(.model, date, cash_prediction, cash_lower_ci_95, cash_upper_ci_95) |>
-  write_csv("forecasts/atm3_forecast_ci_ARIMA.csv")
+  write_csv("forecasts/atm3_forecast_ci_NAIVE.csv")
 ```
 
 # ATM4 Forecast
