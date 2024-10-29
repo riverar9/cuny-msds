@@ -138,3 +138,35 @@ Fifth Presenter - Marjete
 - **Generalization over Overfitting**:
     - Avoid overfitting to past data; models should generalize to future data for reliable predictions.
     - Overfitting leads to poor performance on new data, which could be risky for business decisions.
+
+# 2024 10 29
+
+- Topic for this week is linear regression
+
+- A linear regression formula is just y = mx + b where:
+    - y = dependant
+    - m = coefficent matrix
+    - x = independent variable matrix
+    - b = matrix of intercepts
+
+- Do PCA before building a linear regression model.
+    - PCA identifies the predictors that are useful
+
+- When building this, we want to choose the components that'll have the best predictive capabilities.
+    - Typical result is that RMSE increases after a certain number of principal components.
+    - Too many predictors means that we'll either pick up noise or overfit
+
+- PLS: partial least squares
+    - it does PCA but it considers the impact of the independent variables on the dependant variable.
+    - It'll weigh how well each predictor variable is impactful on the resposne variable.
+    - When training a model, we'll want to do "cross-validation"(?) and iterate over the number of components.
+
+    - PLS is advantageous when the dataset is large
+
+- Multiple linear regression
+    - Remove colinear variables as they will cause the model to have unstable coefficients.
+
+- Linear regression cousins
+    - We center and scale our data so that errors are all treated the same
+        - IE, if we have a predictor on a scale of 10s and another in the scale of 1000s, the model will disproportionally penalize the 1000s predictor
+    
