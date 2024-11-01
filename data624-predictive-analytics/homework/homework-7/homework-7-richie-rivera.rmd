@@ -1,0 +1,360 @@
+---
+title: "DATA 624 - Homework 7"
+author: "Richie Rivera"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+# Question 6.2
+
+6.2. Developing a model to predict permeability (see Sect. 1.4) could save significant resources for a pharmaceutical company, while at the same time more rapidly identifying molecules that have a sufficient permeability to become a drug:
+
+#### (a) Start R and use these commands to load the data:
+
+```{r question_6.2_a_given_code, warning=FALSE}
+library(AppliedPredictiveModeling)
+data(permeability)
+```
+
+The matrix fingerprints contains the 1,107 binary molecular predictors for the 165 compounds, while permeability contains permeability response.
+
+#### (b) The fingerprint predictors indicate the presence or absence of substructures of a molecule and are often sparse meaning that relatively few of the molecules contain each substructure. Filter out the predictors that have low frequencies using the nearZeroVar function from the caret package. How many predictors are left for modeling?
+
+```{r 6.2b, warning=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(caret)
+library(dplyr)
+library(pls)
+library(RANN)
+
+dim(permeability)
+dim(fingerprints)
+
+no_variance_62b <- nearZeroVar(fingerprints)
+
+filter_finger <- fingerprints[, -no_variance_62b]
+```
+
+The `nearZeroVar()` function from the caert package has removed `r length(no_variance_62b)` predictors that had little to no variance.
+
+#### (c) Split the data into a training and a test set, pre-process the data, and tune a PLS model. How many latent variables are optimal and what is the corresponding resampled estimate of R2?
+
+```{r 6.2c_splitting_the_data, fig.width=10}
+set.seed(19940211)
+# Partition the data into a sample of 80% of the full dataset
+train_rows <- createDataPartition(
+  permeability,
+  p = 0.8,
+  list = FALSE
+)
+
+# performing pre-processing on filter_finger
+pp_filter_finger <- prcomp(
+  filter_finger,
+  center = TRUE,
+  scale. = TRUE
+)$x
+
+# Use the sample to create a training dataset
+train_independent <- pp_filter_finger[train_rows, ]
+train_dependent <- permeability[train_rows]
+
+str(train_independent)
+
+# Use the sample to create a testing dataset
+test_independent <- pp_filter_finger[-train_rows, ]
+test_dependent <- permeability[-train_rows]
+
+str(test_independent)
+
+# Tuning/Fitting our model
+pls_fit <- train(
+  x = train_independent,
+  y = train_dependent,
+  method = "pls",
+  metric = "Rsquared",
+  tuneLength = 20,
+  trControl = trainControl(method = "cv", number = 10)
+)
+
+optimal_result <- pls_fit$results |>
+  arrange(desc(Rsquared)) |>
+  head(1)
+
+pls_fit$results
+
+plot(pls_fit)
+
+pls_fit
+```
+
+From the model above, we can see that the optimal number of components is `r optimal_result$ncomp` with an $R^2$ of `r round(optimal_result$Rsquared, 4)`
+
+#### (d) Predict the response for the test set. What is the test set estimate of R2?
+
+```{r 6.2d_predicting_test_set, fig.width=10}
+# Get predictions on the testing dataset
+test_predictions <- predict(
+  pls_fit,
+  test_independent,
+  ncomp = optimal_result$ncomp
+)
+
+# Use postResample to compare results
+test_results <- postResample(
+  pred = test_predictions,
+  obs = test_dependent
+)
+
+test_results
+```
+
+Using the postResample function, we can see that the test set estimate of $R^2$ is `r round(test_results["Rsquared"], 4)`
+
+#### (e) Try building other models discussed in this chapter. Do any have better predictive performance?
+
+A few of the other types of models discussed in this chapter are the penalized models:
+
+1. Ridge Method
+
+```{r 6.2e_ridge_fit}
+ridge_fit <- train(
+  x = train_independent,
+  y = train_dependent,
+  method = "ridge",
+  metric = "Rsquared",
+  tuneGrid =  data.frame(.lambda = seq(0, 5, by = .25)),
+  trControl = trainControl(method = "cv", number = 10)
+)
+
+ridge_optimal <- ridge_fit$results |>
+  arrange(Rsquared) |>
+  tail(1)
+
+ridge_test_results <- postResample(
+  pred = predict(
+    ridge_fit,
+    test_independent
+  ),
+  test_dependent
+)
+
+plot(ridge_fit)
+
+ridge_fit
+```
+
+Across this ridge model, our best $R^2$ is `r round(ridge_optimal$Rsquared, 2)` with a lambda of `r ridge_optimal$lambda`
+
+2. Lasso Method
+
+```{r 6.2e_lasso_fit}
+lasso_fit <- train(
+  x = train_independent,
+  y = train_dependent,
+  method = "lasso",
+  metric = "Rsquared",
+  tuneGrid =  expand.grid(
+    .fraction = seq(.05, 1, by = 0.05)
+  ),
+  trControl = trainControl(method = "cv", number = 10)
+)
+
+lasso_optimal <- lasso_fit$results |>
+  arrange(Rsquared) |>
+  tail(1)
+
+lasso_test_results <- postResample(
+  pred = predict(
+    lasso_fit,
+    test_independent
+  ),
+  test_dependent
+)
+
+plot(lasso_fit)
+
+lasso_fit
+```
+
+Across this lasso model, our best $R^2$ is `r round(lasso_optimal$Rsquared, 2)` with a fraction of `r lasso_optimal$fraction`.
+
+3. Elasticnet Method
+
+```{r 6.2e_elasticnet_method}
+enet_fit <- train(
+  x = train_independent,
+  y = train_dependent,
+  method = "enet",
+  metric = "Rsquared",
+  tuneGrid =  expand.grid(
+    .fraction = seq(0.05, 1, by = 0.05),
+    .lambda = seq(.00, 1, by = .05)
+  ),
+  trControl = trainControl(method = "cv", number = 10)
+)
+
+enet_test_results <- postResample(
+  pred = predict(
+    enet_fit,
+    test_independent
+  ),
+  test_dependent
+)
+
+enet_optimal <- enet_fit$results |>
+  arrange(Rsquared) |>
+  tail(1)
+
+plot(enet_fit)
+
+enet_fit
+```
+
+Across these Elasticnet models, our best $R^2$ on the test dataset is `r round(enet_optimal$Rsquared, 2)` using the PLS model.
+
+I wouldn't recommend using any of these models as their testing MAE is very high relative to the predicted values, meaning that the actual value can greatly vary from our predictions.
+
+#### (f) Would you recommend any of your models to replace the permeability laboratory experiment?
+
+```{r 6.2f_test_results}
+test_results
+ridge_test_results
+lasso_test_results
+enet_test_results
+```
+
+From our models above, the best performing one is the PLS model performed the best with a $R^2$ of `r round(test_results['Rsquared'],2)`.
+
+# Question 6.3
+
+6.3. A chemical manufacturing process for a pharmaceutical product was discussed in Sect. 1.4. In this problem, the objective is to understand the relationship between biological measurements of the raw materials (predictors), measurements of the manufacturing process (predictors), and the response of product yield. Biological predictors cannot be changed but can be used to assess the quality of the raw material before processing. On the other hand, manufacturing process predictors can be changed in the manufacturing process. Improving product yield by 1 % will boost revenue by approximately one hundred thousand dollars per batch:
+
+#### (a) Start R and use these commands to load the data:
+```{r question_6.3_a_given_code}
+library(AppliedPredictiveModeling)
+data(ChemicalManufacturingProcess)
+```
+ 
+The matrix processPredictors contains the 57 predictors (12 describing the input biological material and 45 describing the process predictors) for the 176 manufacturing runs. yield contains the percent yield for each run.
+
+#### (b) A small percentage of cells in the predictor set contain missing values. Use an imputation function to fill in these missing values (e.g., see Sect. 3.8).
+
+In the `preprocess` function, we can specify a NA fill method. I believe using a KNN would be a good method:
+
+```{r 6.3b_fill_nulls}
+sum(is.na(ChemicalManufacturingProcess[, -c(1)]))
+
+knn_impute <- preProcess(
+  ChemicalManufacturingProcess[, -c(1)],
+  method = "knnImpute"
+)
+
+cmp_independent <- predict(
+  knn_impute,
+  ChemicalManufacturingProcess[, -c(1)]
+)
+
+cmp_dependent <- ChemicalManufacturingProcess[, c(1), drop=FALSE]
+
+sum(is.na(cmp_independent[, -c(1)]))
+```
+
+#### (c) Split the data into a training and a test set, pre-process the data, and tune a model of your choice from this chapter. What is the optimal value of the performance metric?
+
+```{r 6.3c_splitting_the_data, fig.width=10}
+set.seed(19940211)
+# Partition the data into a sample of 80% of the full dataset
+cmp_train_rows <- createDataPartition(
+  cmp_independent$BiologicalMaterial01,
+  p = 0.8,
+  list = FALSE
+)
+
+# Use the sample to create a training dataset
+cmp_train_ind <- cmp_independent[cmp_train_rows, ]
+cmp_train_dep <- cmp_dependent[cmp_train_rows]
+
+str(train_independent)
+
+# Use the sample to create a testing dataset
+cmp_test_ind <- cmp_independent[-cmp_train_rows, ]
+cmp_test_dep <- cmp_dependent[-cmp_train_rows]
+
+str(test_independent)
+
+# Tuning/Fitting our model
+cmp_pls_fit <- train(
+  x = cmp_train_ind,
+  y = cmp_train_dep,
+  method = "pls",
+  metric = "Rsquared",
+  tuneLength = 20,
+  trControl = trainControl(method = "cv", number = 10),
+  preProcess = c(
+    "center",
+    "scale"
+  )
+)
+
+cmp_pls_optimal_result <- cmp_pls_fit$results |>
+  arrange(desc(Rsquared)) |>
+  head(1)
+
+cmp_pls_fit$results
+
+plot(cmp_pls_fit)
+
+cmp_pls_fit
+```
+
+The above chunk of code uses a PLS model and we can see that the optimal value of this model is `r cmp_pls_optimal_result$ncomp` with an $R^2$ of `r round(cmp_pls_optimal_result$Rsquared, 2)`.
+
+#### (d) Predict the response for the test set. What is the value of the performance metric and how does this compare with the resampled performance metric on the training set?
+
+```{r 6.3d_predicting_on_test_set, fig.width=10}
+# Get predictions on the testing dataset
+cmp_pls_test_pred <- predict(
+  cmp_pls_fit,
+  cmp_test_ind,
+  ncomp = cmp_pls_optimal_result$ncomp
+)
+
+# Use postResample to compare results
+cmp_pls_test_results <- postResample(
+  pred = cmp_pls_test_pred,
+  obs = cmp_test_dep
+)
+
+cmp_pls_test_results[["Rsquared"]]
+```
+
+From the above test, we can see that the test $R^2$ is `r round(cmp_pls_test_results[["Rsquared"]], 2)` which is greater but similar to that of the training set.
+
+#### (e) Which predictors are most important in the model you have trained? Do either the biological or process predictors dominate the list?
+
+```{r 6.3e_fit_model_results, fig.width = 10}
+cmp_pls_importance <- varImp(cmp_pls_fit, scale = FALSE)
+plot(cmp_pls_importance)
+```
+
+From the above plot, we can see that the most important predictors are (in order):
+1. `ManufacturingProcess32`
+2. `ManufacturingProcess36`
+3. `ManufacturingProcess13`
+4. `ManufacturingProcess17`
+5. `ManufacturingProcess09`
+
+The `ManufacturingProcess` predictors comprise 8 of the top 10 predictors. With the top 5 accounting for `r round(100 * sum(head(arrange(cmp_pls_importance$importance, desc(Overall)))$Overall), 2)`% of total importance
+
+#### (f) Explore the relationships between each of the top predictors and the response. How could this information be helpful in improving yield in future runs of the manufacturing process?
+
+As a rule of thumb, a larger the coefficient is the more important it is to the model. So we can use that information to indicate how important certain steps or materials are.
+
+If it is negative, then it's an indication that we may be able to better identify poor runs or highlight areas that need improvement/change to increase the reliability of the process.
+
+```{r 6.3f_exploring_relationships}
+coef(cmp_pls_fit$finalModel)
+```
