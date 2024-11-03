@@ -1,0 +1,8 @@
+Matplotlib is a python package that provides the ability to create plots and control over low-level plot details. Seaborn on the otherhand is essentially a wrapper that simplifies the process of building prettier plots. In my work, I tend to use seaborn first as it's simpler and creates prettier plots.
+Most importantly, give each plot a singular purpose. Typically when presenting to an audience they will only walk away with one takeaway from a plot and giving each plot one clear purpose allows you to communicate easily.
+I believe that geeksforgeeks.org gives great examples here. We can see between these two pages that the matplotlib example requires much more information in order to create a similar visual:
+Matplotlib example
+seaborn example
+Responses below:
+the data-ink ratio is a metric that measures how much of the graphic is being used to communicate the data.
+You can remove gridlines, use minimal styles, and/or filter your data displayed.
