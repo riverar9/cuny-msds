@@ -1,0 +1,406 @@
+---
+title: "DATA 624 - Homework 8"
+author: "Richie Rivera"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+# Exercise 7.2
+Friedman (1991) introduced several benchmark data sets create by simulation. One of these simulations used the following nonlinear equation to create data:
+
+$$y = 10sin(πx_1x_2) + 20(x_3 - 0.5)^2 + 10x_4 + 5x_5 + N(0, \sigma^2)$$
+
+where the x values are random variables uniformly distributed between [0, 1] (there are also 5 other non-informative variables also created in the simulation). The package mlbench contains a function called mlbench.friedman1 that simulates these data:
+
+```{r 7.2_given_code, fig.width=10, warning = FALSE}
+library(mlbench)
+library(caret)
+set.seed(200)
+trainingData <- mlbench.friedman1(200, sd = 1)
+## We convert the 'x' data from a matrix to a data frame
+## One reason is that this will give the columns names.
+trainingData$x <- data.frame(trainingData$x)
+## Look at the data using
+featurePlot(trainingData$x, trainingData$y)
+## or other methods.
+
+## This creates a list with a vector 'y' and a matrix
+## of predictors 'x'. Also simulate a large test set to
+## estimate the true error rate with good precision:
+testData <- mlbench.friedman1(5000, sd = 1)
+testData$x <- data.frame(testData$x)
+```
+
+Tune several models on these data. For example:
+
+```{r 7.2_given_code2, fig.width=10, warning=FALSE}
+library(caret)
+knnModel <- train(
+  x = trainingData$x,
+  y = trainingData$y,
+  method = "knn",
+  preProc = c("center", "scale"),
+  tuneLength = 10
+)
+
+knnModel
+
+knnPred <- predict(knnModel, newdata = testData$x)
+## The function 'postResample' can be used to get the test set
+## performance values
+postResample(pred = knnPred, obs = testData$y)
+```
+
+Which models appear to give the best performance? Does MARS select the informative predictors (those named `X1`-`X5`)?
+
+Fitting a few models below:
+
+**Average Neural Net - 5 Layers**
+
+We're going to employ bootstrapping by setting `bag = TRUE`:
+
+```{r 7.2_avgnerual_net, fig.width=10, warning=FALSE}
+library(nnet)
+set.seed(19940211)
+
+layers <- 5
+
+avnnet_fit <- avNNet(
+  trainingData$x,
+  trainingData$y,
+  decay = .01,
+  size = layers,
+  repeats = 5,
+  maxit = 500,
+  bag = TRUE
+)
+
+nnet_pred <- predict(
+  avnnet_fit,
+  newdata = testData$x
+)
+
+postResample(
+  pred = nnet_pred,
+  obs = testData$y
+)
+```
+
+**Multivariate Adaptive Regression Splines (MARS)**
+
+```{r 7.2_mars, fig.width=10, warning=FALSE}
+library(earth)
+
+mars_fit <- earth(
+  trainingData$x,
+  trainingData$y
+)
+
+summary(mars_fit)
+
+plotmo(mars_fit)
+
+mars_pred <- predict(
+  mars_fit,
+  newdata = testData$x
+)
+
+postResample(
+  pred = mars_pred,
+  obs = testData$y
+)
+```
+
+Trying a method iterating through `.degree` and `.nprune`:
+
+```{r 7.2_mars_iter, fig.width=10, warning=FALSE}
+mars_iter_fit <- train(
+  trainingData$x,
+  trainingData$y,
+  method = "earth",
+  tuneGrid = expand.grid(.degree = 1:4, .nprune = 2:50),
+  trControl = trainControl(method = "cv")
+)
+
+mars_iter_fit$finalModel
+
+plot(varImp(mars_iter_fit))
+
+mars_iter_pred <- predict(
+  mars_iter_fit,
+  newdata = testData$x
+)
+
+postResample(
+  pred = mars_iter_pred,
+  obs = testData$y
+)
+```
+
+**Support Vector Machines (SVM)**
+
+```{r 7.2_svm, fig.width=10, warning=FALSE}
+library(kernlab)
+
+svm_fit <- train(
+  trainingData$x,
+  trainingData$y,
+  method = "svmRadial",
+  tuneLength = 14,
+  trControl = trainControl(method = "cv")
+)
+
+svm_fit$finalModel
+
+svm_pred <- predict(
+  svm_fit,
+  newdata = testData$x
+)
+
+postResample(
+  pred = svm_pred,
+  obs = testData$y
+)
+```
+
+**K-Neareset Neighbors (KNN)**
+
+```{r 7.2_knn, fig.width = 10}
+knn_fit <- train(
+  trainingData$x,
+  trainingData$y,
+  method = "knn",
+  tuneGrid = data.frame(.k = 1:20),
+  trControl = trainControl(method = "cv")
+)
+
+knn_fit$finalModel
+
+knn_pred <- predict(
+  knn_fit,
+  newdata = testData$x
+)
+
+postResample(
+  pred = knn_pred,
+  obs = testData$y
+)
+```
+
+From the above models, the MARS model with the iterative approach had the best $R^2$ of `r round(postResample(mars_iter_pred, testData$y)[['Rsquared']], 2)`. We can conclude in this case that $R^2$ is a sufficient metric to compare these and that the iterative MARS model is the best.
+
+Revisiting the iterative MARS model before, we can see that the model did select `X1` through `X5` although `X1`, `X4`, `X2`, and `X5` are of high importance but `X3` isn't.
+
+# Exercise 7.5
+
+Exercise 6.3 describes data for a chemical manufacturing process. Use the same data imputation, data splitting, and pre-processing steps as before and train several nonlinear regression models.
+
+```{r 7.5_loading_chem_data, warning=FALSE}
+library(AppliedPredictiveModeling)
+data(ChemicalManufacturingProcess)
+```
+
+In the `preprocess` function, we can specify a NA fill method. I believe using a KNN would be a good method:
+
+```{r 6.3b_fill_nulls}
+sum(is.na(ChemicalManufacturingProcess[, -c(1)]))
+
+# Removing entries with low variance
+ChemicalManufacturingProcess <- ChemicalManufacturingProcess[, -nearZeroVar(ChemicalManufacturingProcess)]
+
+# Filling NAs using KNN
+knn_impute <- preProcess(
+  ChemicalManufacturingProcess[, -c(1)],
+  method = "knnImpute"
+)
+
+cmp_independent <- predict(
+  knn_impute,
+  ChemicalManufacturingProcess[, -c(1)]
+)
+
+cmp_dependent <- ChemicalManufacturingProcess[, c(1), drop=FALSE]
+
+sum(is.na(cmp_independent[, -c(1)]))
+
+set.seed(19940211)
+# Partition the data into a sample of 80% of the full dataset
+cmp_train_rows <- createDataPartition(
+  cmp_independent$BiologicalMaterial01,
+  p = 0.8,
+  list = FALSE
+)
+
+# Use the sample to create a training dataset
+cmp_train_ind <- cmp_independent[cmp_train_rows, ]
+cmp_train_dep <- cmp_dependent[cmp_train_rows]
+
+# Use the sample to create a testing dataset
+cmp_test_ind <- cmp_independent[-cmp_train_rows, ]
+cmp_test_dep <- cmp_dependent[-cmp_train_rows]
+```
+
+#### (a)   Which nonlinear regression model gives the optimal resampling and test set performance?
+
+**SVM**
+
+```{r 7.5a_SVM, fig.width=10}
+cmp_svm_fit <- train(
+  cmp_train_ind,
+  cmp_train_dep,
+  preProc = c("center", "scale"),
+  method = "svmRadial",
+  tuneLength = 14,
+  trControl = trainControl(method = "cv")
+)
+
+postResample(
+  pred = predict(
+    cmp_svm_fit,
+    cmp_test_ind
+  ),
+  cmp_test_dep
+)
+```
+
+**KNN**
+
+For KNN, I'll test multiple tune lengths:
+
+```{r 7.5a_knn, fig.width=10}
+knn_grid <- expand.grid(.k = c(1:20))
+
+cmp_knn_fit <- train(
+  x = cmp_train_ind,
+  y = cmp_train_dep,
+  method = "knn",
+  preProc = c("center", "scale"),
+  tuneGrid = knn_grid
+)
+
+postResample(
+  pred = predict(
+    cmp_knn_fit,
+    cmp_test_ind
+  ),
+  cmp_test_dep
+)
+```
+
+**MARS - Iterative**
+
+Since the iterative version of MARS was better in the last exercise, we will use the same grid:
+
+```{r 7.5a_mars, fig.width=10}
+mars_grid <- expand.grid(.degree = 1:4, .nprune = 2:50)
+
+cmp_mars_fit <- train(
+  cmp_train_ind,
+  cmp_train_dep,
+  method = "earth",
+  tuneGrid = mars_grid,
+  trControl = trainControl(method = "cv")
+)
+
+postResample(
+  pred = predict(
+    cmp_mars_fit,
+    cmp_test_ind
+  ),
+  cmp_test_dep
+)
+```
+
+**Neural Net**
+
+For a neural net, we want to first remove items that are highly correlated. Then adjust the training and test independent to remove those entries.
+
+I'm also going to go over a series of different decays and sizes:
+
+```{r 7.5a_nn, fig.width=10}
+nn_highly_correlated <- findCorrelation(cor(cmp_train_ind), cutoff = .65)
+
+nn_train_ind <- cmp_train_ind[, -nn_highly_correlated]
+nn_test_ind <- cmp_test_ind[, -nn_highly_correlated]
+
+nnet_grid <- expand.grid(
+  .decay = c(0, .2, by = 0.01),
+  .size = c(3:10)
+)
+
+cmp_nn_fit <- train(
+  nn_train_ind,
+  cmp_train_dep,
+  method = "nnet",
+  tuneGrid = nnet_grid,
+  trControl = trainControl(method = "cv", number = 10),
+  preProc = c("center", "scale"),
+  MaxNWts = 10 * (ncol(nn_train_ind) + 1) + 10 + 1,
+  maxit = 500,
+  linout = TRUE,
+  trace = FALSE
+)
+
+postResample(
+  pred = predict(
+    cmp_nn_fit,
+    nn_test_ind
+  ),
+  cmp_test_dep
+)
+```
+
+From the above models that we trained, the KNN model had the best $R^2$ of .61 and an RMSE and MAE comparable to the other models.
+
+#### (b) Which predictors are most important in the optimal nonlinear regression model? Do either the biological or process variables dominate the list? How do the top ten important predictors compare to the top ten predictors from the optimal linear model?
+
+```{r 7.5b_show_model_importance, fig.width=10}
+plot(varImp(cmp_knn_fit))
+```
+
+From the above, we can see that the manufacturing process 13, 32, and 09 are the most important and that the majority of the most important variables are manufacturing processes. In our linear model, [which can be found here](https://rpubs.com/rrivera89/data624-homework-7), a similar result was found where the most important variables were the manufacturing processes.
+
+#### (c) Explore the relationships between the top predictors and the response for the predictors that are unique to the optimal nonlinear regression model. Do these plots reveal intuition about the biological or process predictors and their relationship with yield?
+
+Since our optimal model was a KNN model, we don't have coefficients as we do with other models. The relationships between the independent and dependent variables are complex as the model uses a non-parametric algorithm.
+
+To try to still find an answer here, I'll look at the top 10 predictors and Yield across the test set to see if we can see some sort of correlation:
+
+
+```{r 7.5c_investigate, fig.width=10}
+library(dplyr)
+
+top_10_predictors <- varImp(cmp_knn_fit)$importance |>
+  arrange(desc(Overall)) |>
+  head(10)
+
+cmp_knn_predictions <- predict(
+  cmp_knn_fit,
+  cmp_test_ind
+)
+
+relationship_df <- cmp_test_ind |>
+  mutate(Yield = cmp_knn_predictions)
+
+for (predictor in rownames(top_10_predictors)) {
+  plot <- ggplot(relationship_df, aes_string(x = predictor, y = "Yield")) +
+    geom_point(color = "blue", alpha = 0.6) +
+    labs(
+      title = paste("Relationship between", predictor, "and Yield"),
+      x = predictor,
+      y = "Yield"
+    ) +
+    theme_minimal()
+
+  print(plot)
+}
+```
+
+From the charts above it's apparant that the KNN model is capturing complex interactions as most of these charts do not have an obvious pattern between the strongest predictors and Yield. There is somewhat a relationship between:
+
+1. ManufacturingProcess32 - Positive
+2. BiologicalMaterial06 - Positive
+3. BiologicalMaterial03 - Positive
+4. ManufacturingProcess31 - Negative
