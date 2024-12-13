@@ -1,0 +1,848 @@
+---
+title: "DATA 624 Project 2"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# 1. Introduction
+
+In this Notebook, we will attempt to build a model which will address the below mission statement. Using the applicable techniques at our disposal, we will attempt to predicatively estimate the PH of the manufacturing process at ABC Beverage. Additionally, we will provide a forecast for "new" data provided.
+
+# 2. Mission Statement
+
+Project #2 (Team) Assignment
+
+This is role playing.  I am your new boss.  I am in charge of production at ABC Beverage and you are a team of data scientists reporting to me.  My leadership has told me that new regulations are requiring us to understand our manufacturing process, the predictive factors and be able to report to them our predictive model of PH.
+
+Please use the historical data set I am providing.  Build and report the factors in BOTH a technical and non-technical report.  I like to use Word and Excel.  Please provide your non-technical report in a  business friendly readable document and your predictions in an Excel readable format.   The technical report should show clearly the models you tested and how you selected your final approach.
+
+Please submit both Rpubs links and .rmd files or other readable formats for technical and non-technical reports.  Also submit the excel file showing the prediction of your models for pH.
+
+# 3. Method
+
+In the below sections, we will begin by performing Exploratory Data Analysis with the goals of:
+
+
+1. Identifying and determining treatments for any missing data
+2. Understanding the variance of each predictor
+3. Identifying relationships between predictors and the response variable
+
+Once that is completed, we will then perform any data reprocessing necessary from the EDA performed.
+
+At this point, our dataset will be ready for modeling and we will then build a series of Linear, Nonlinear, Regression, and Rule-Based models. We will be varying the inputs to find an optimal model.
+
+The models we will build are:
+1. Ordinary Linear Regression
+2. Partial Least Squares (PLS)
+3. Neural Network Model
+4. Multivariate Adaptive Regression Splines (MARS)
+5. Support Vector Machines (SVM)
+6. K-Nearest Neighbors (KNN)
+7. Random Forest
+8. Boosted Trees
+10. Cubist
+
+# 4. EDA
+
+## Importing Libraries and reading in the data
+
+```{r, warning = FALSE, messages = FALSE}
+start <- Sys.time()
+# Install packages as necessary
+pkgs <- c("fpp3", "caret", "RANN", "mlbench", "earth", "party", "Cubist", "gbm", "randomForest", "doParallel", "VIM", "pls","elasticnet", "kernlab","corrplot")
+for (pkg in pkgs) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    install.packages(pkg)
+  }
+}
+
+library(readxl)
+library(tidyverse)
+library(pls)
+library(fpp3)
+library(caret)
+library(RANN)
+library(mlbench)
+library(nnet)
+library(earth)
+library(VIM)
+library(party)
+library(Cubist)
+library(gbm)
+library(randomForest)
+library(doParallel)
+library(elasticnet)
+library(kernlab)
+library(corrplot)
+
+# Specify URLS
+train_data_url <- "https://github.com/riverar9/cuny-msds/raw/refs/heads/main/data624-predictive-analytics/projects/project-2/StudentData.xlsx"
+new_data_url <- "https://github.com/riverar9/cuny-msds/raw/refs/heads/main/data624-predictive-analytics/projects/project-2/StudentEvaluation.xlsx"
+
+# Download the files
+download.file(train_data_url, destfile = "temp_train.xlsx", mode = "wb")
+download.file(new_data_url, destfile = "temp_new.xlsx", mode = "wb")
+
+# Read the files
+student_train <- read_excel("temp_train.xlsx")
+student_test <- read_excel("temp_new.xlsx")
+
+# Delete the files
+file.remove("temp_train.xlsx", "temp_new.xlsx")
+```
+
+## Inspecting the Data
+
+```{r, warning = FALSE, messages = FALSE}
+# See train data info
+str(student_train)
+```
+
+```{r, warning = FALSE, messages = FALSE}
+summary(student_train)
+```
+
+```{r, warning = FALSE, messages = FALSE}
+# View Test Data
+str(student_test)
+```
+
+```{r, warning = FALSE, messages = FALSE}
+summary(student_test)
+```
+
+From the above summaries, we can see that the majority of predictors are numeric with the sole exception of `Brand Code` which is a string that appears to represent categorical information. That will need to be converted into a factor.
+From the summaries, we can see that there are a few `NULL` entries. In the next cell, we'll investigate how many there are.
+
+## Checking for Null Entries
+
+```{r, warning = FALSE, messages = FALSE}
+# View the number Null entries in the training data
+na_counts_train <- data.frame(null_count = colSums(is.na(student_train)))
+na_counts_train$percentage <- (na_counts_train$null_count / nrow(student_train)) * 100
+
+na_counts_train
+```
+
+```{r, warning = FALSE, messages = FALSE}
+na_counts_test <- data.frame(null_count = colSums(is.na(student_test)))
+na_counts_test$percentage <- (na_counts_test$null_count / nrow(student_test)) * 100
+
+na_counts_test
+```
+
+From the above null counts, we can see that there are a quite a few `NULL` values across most of the predictors in our data and a few in our dependent. We will need to account for these `NULL` values.
+
+For the independent `NULL` values, we've elected to drop them as we have 2,571 total records and dropping these `NULL` values will only result in 4	records being omitted which we don't believe will impact the results greatly as we already have so many total records.
+
+For the independent `NULL` values, we can fill these by using imputation. Our method of choice will be to kNN to fill these values.
+
+# 5. Data Pre-Processing
+
+## Removing predictors with Little to No Variance
+Using the function `nearZeroVar()` we can remove entries. This will help our models' performance and help avoid overfitting.
+
+```{r, warning = FALSE, messages = FALSE}
+# use nearZeroVar to remove 0 variance items from the training dataset
+student_train_with_variance <- student_train[, -nearZeroVar(student_train)]
+
+# Use colnames to select values from the testing dataset
+student_test_with_variance <- student_test |>
+  select(colnames(student_train_with_variance))
+```
+
+## Removing data with `NULL` Dependents
+
+```{r, warning = FALSE, messages = FALSE}
+# Removing null PH from the training dataset
+student_train_no_null_PH <- student_train_with_variance |>
+  filter(!is.na(PH))
+```
+
+## Imputing Data using KNN and Converting `Brand Code`
+
+To impute the data, we'll use KNN to fill the training dataset and use that KNN model to fill the missing data for the testing dataset.
+
+```{r, warning = FALSE, messages = FALSE}
+# Setting the PH of the testing dataset to 0
+student_test_with_variance$PH[is.na(student_test_with_variance$PH)] <- 0
+
+# Combine train and test data
+combined_data <- bind_rows(
+  mutate(student_train_no_null_PH, dataset = "train"),
+  mutate(student_test_with_variance, dataset = "test")
+)
+
+# Convert Brand Code into a factor
+combined_data <- combined_data |>
+  mutate("Brand Code" = as.factor(`Brand Code`))
+
+# Impute combined data
+imputed_data <- kNN(combined_data, k = 5)
+
+# Separate back into train and test
+train_data <- imputed_data |>
+  filter(dataset == "train") |>
+  select(-dataset) |>
+  select(-ends_with("_imp"))
+
+test_data <- imputed_data |>
+  filter(dataset == "test") |>
+  select(-dataset) |>
+  select(-ends_with("_imp"))
+
+dim(train_data)
+```
+
+## Centering, Scaling, and Splitting the Data
+
+```{r, warning = FALSE, messages = FALSE}
+# Split the data into train and test dataframes
+training_x <- train_data |>
+  select(-PH)
+training_y <- train_data |>
+  select(PH)
+
+test_x <- test_data |>
+  select(-PH)
+
+# Create a preProcess function model using the training dataset
+preprocess_apply <- preProcess(
+  training_x,
+  method = c(
+    "center",
+    "scale"
+  )
+)
+
+# Apply the preprocessing to the training and testing dataset
+train_preprocessed <- predict(
+  preprocess_apply,
+  training_x
+)
+
+test_preprocessed <- predict(
+  preprocess_apply,
+  test_x
+)
+```
+
+Now that we've performed the centering and scaling on the independent values we will split the `train_preprocessed` into training and validation datasets.
+
+```{r, warning = FALSE, messages = FALSE}
+set.seed(1994)
+
+# Use the sample function to create a random 80/20 split
+train_rows <- sample(
+  seq_len(nrow(train_preprocessed)),
+  size = 0.8 * nrow(train_preprocessed)
+)
+
+train_x <- train_preprocessed[train_rows, ]
+train_y <- training_y[train_rows, ]
+
+validation_x <- train_preprocessed[-train_rows, ]
+validation_y <- training_y[-train_rows, ]
+```
+
+With this section complete, we now have a few datasets which we will use as we train our models:
+
+1. `train_x` - The independent dataset which we will train from
+2. `validation_x` - The independent dataset which we will assess models using
+3. `train_y` - The dependent values corresponding to the `train_x` dataset
+4. `validation_y` - The dependent values corresponding to the `validaiton_x` dataset
+5. `test_x` - Our preprocessed indpendent data representing the unknown data from the manufacturing floor
+
+With these steps completed, we are ready to begin training our models.
+
+# 6. Model Creation
+
+## Setup
+In order to assess these models later we will initialize a dataframe which will retain all of our performance metrics across the validation dataset.
+
+```{r, warning = FALSE, messages = FALSE}
+# Create an empty dataframe to store results
+model_results <- data.frame(
+  Model = character(),
+  RMSE = numeric(),
+  R_Squared = numeric(),
+  MAE = numeric(),
+  stringsAsFactors = FALSE
+)
+```
+
+Now we will specify the cross-validation that we will apply as we built out our models:
+
+```{r, warning = FALSE, messages = FALSE}
+global_trcontrol <- trainControl(
+  method = "cv",
+  allowParallel = TRUE
+)
+```
+
+## A. Ordinary Linear Regression
+
+```{r, warning = FALSE, messages = FALSE}
+model_type = "Ordinary Linear Regression"
+
+# Set a seed to today's date
+set.seed(1994)
+
+# Train our OLR model
+olr_model <- train(
+  x = train_x,
+  y = train_y,
+  method = "lm",
+  trControl = global_trcontrol
+)
+
+# Obtain predictions for our model
+model_predictions <- predict(
+  olr_model,
+  newdata = validation_x
+)
+
+# Obtain performance metrics for our trained model on unseen data
+model_metrics <- postResample(
+  model_predictions,
+  validation_y
+)
+
+# Store these results in our "model_results" dataframe
+model_results <- rbind(model_results, data.frame(
+  Model = model_type,
+  RMSE = model_metrics["RMSE"],
+  R_Squared = model_metrics["Rsquared"],
+  MAE = model_metrics["MAE"]
+))
+```
+
+```{r, warning = FALSE, messages = FALSE}
+model_metrics
+```
+
+## B. Partial Least Squares (PLS)
+
+```{r, warning = FALSE, messages = FALSE}
+model_type = "Partial Least Squares"
+
+set.seed(1994)
+
+# Train our model
+pls_model <- train(
+  train_x,
+  train_y,
+  method = "pls",
+  tuneLength = 20,
+  trControl = global_trcontrol
+)
+
+# Obtain predictions for our model
+model_predictions <- predict(
+  pls_model,
+  newdata = validation_x
+)
+
+# Obtain performance metrics for our trained model on unseen data
+model_metrics <- postResample(
+  model_predictions,
+  validation_y
+)
+
+# Store these results in our "model_results" dataframe
+model_results <- rbind(model_results, data.frame(
+  Model = model_type,
+  RMSE = model_metrics["RMSE"],
+  R_Squared = model_metrics["Rsquared"],
+  MAE = model_metrics["MAE"]
+))
+```
+
+```{r, warning = FALSE, messages = FALSE}
+model_metrics
+```
+
+## C. Neural Network Model
+
+A neural network cannot have factors as an input. To account this, factors must be converted into numeric representations which is what have done below:
+
+```{r, warning = FALSE, messages = FALSE}
+# Use Dummy Variables to convert the factor into a numeric
+train_x_with_dummies <- cbind(
+  train_x,
+  model.matrix(
+    ~ `Brand Code` - 1,
+    data = train_x
+  )
+  ) |>
+  select(-`Brand Code`)
+
+validation_x_with_dummies <- cbind(
+  validation_x,
+  model.matrix(
+    ~ `Brand Code` - 1,
+    data = validation_x
+  )
+) |>
+  select(-`Brand Code`)
+```
+
+A neural network will require correlated items to be removed because they introduce redundancy, which can lead to inefficiencies and instability during training. Additionally, removing them reduces the risk of overfitting and helps the model generalize better to new data.
+
+```{r, warning = FALSE, messages = FALSE}
+# Collect items with high correlations
+nn_high_correlation <- findCorrelation(cor(train_x_with_dummies), cutoff = 0.75)
+
+nn_train_x <- train_x_with_dummies[, -nn_high_correlation]
+nn_validation_x <- validation_x_with_dummies[, -nn_high_correlation]
+```
+
+```{r, warning = FALSE, messages = FALSE}
+model_type = "Neural Network"
+
+# Set our Neural Network Tuning Grid
+nnet_grid <- expand.grid(
+  .decay = seq(0, .2, by = .05),
+  .size = c(3:8)
+)
+
+# Set a seed to today's date
+set.seed(1994)
+
+# Train our model
+nnet_model <- train(
+  train_x_with_dummies,
+  train_y,
+  method = "nnet",
+  tuneGrid = nnet_grid,
+  trControl = global_trcontrol,
+  MaxNWts = 10 * (ncol(train_x) + 1) + 10 + 1,
+  maxit = 500,
+  linout = TRUE,
+  trace = FALSE
+)
+
+# Obtain predictions for our model
+model_predictions <- predict(
+  nnet_model,
+  newdata = validation_x_with_dummies
+)
+
+# Obtain performance metrics for our trained model on unseen data
+model_metrics <- postResample(
+  model_predictions,
+  validation_y
+)
+
+# Store these results in our "model_results" dataframe
+model_results <- rbind(model_results, data.frame(
+  Model = model_type,
+  RMSE = model_metrics["RMSE"],
+  R_Squared = model_metrics["Rsquared"],
+  MAE = model_metrics["MAE"]
+))
+```
+
+```{r, warning = FALSE, messages = FALSE}
+model_metrics
+```
+
+## D. Multivariate Adaptive Regression Splines (MARS)
+
+```{r, warning = FALSE, messages = FALSE}
+model_type = "MARS"
+
+# Set a seed to today's date
+set.seed(1994)
+
+# Set Mars Tune Grid
+mars_grid <- expand.grid(
+  .degree = 1:4,
+  .nprune = 2:40
+)
+
+# Train our model
+mars_model <- train(
+  train_x,
+  train_y,
+  method = "earth",
+  tuneGrid = mars_grid,
+  trControl = global_trcontrol
+)
+
+# Obtain predictions for our model
+model_predictions <- predict(
+  mars_model,
+  newdata = validation_x
+)
+
+# Obtain performance metrics for our trained model on unseen data
+model_metrics <- postResample(
+  model_predictions,
+  validation_y
+)
+
+# Store these results in our "model_results" dataframe
+model_results <- rbind(model_results, data.frame(
+  Model = model_type,
+  RMSE = model_metrics["RMSE"],
+  R_Squared = model_metrics["Rsquared"],
+  MAE = model_metrics["MAE"]
+))
+```
+
+```{r, warning = FALSE, messages = FALSE}
+model_metrics
+```
+
+## E. Support Vector Machines (SVM)
+
+Similar to the Neural Network, we will need to use Dummies for this model:
+
+```{r, warning = FALSE, messages = FALSE}
+model_type = "SVM"
+
+# Set a seed to today's date
+set.seed(1994)
+
+# Train our model
+svm_model <- train(
+  train_x_with_dummies,
+  train_y,
+  method = "svmRadial",
+  tuneLength = 14,
+  trControl = global_trcontrol
+)
+
+# Obtain predictions for our model
+model_predictions <- predict(
+  svm_model,
+  newdata = validation_x_with_dummies
+)
+
+# Obtain performance metrics for our trained model on unseen data
+model_metrics <- postResample(
+  model_predictions,
+  validation_y
+)
+
+# Store these results in our "model_results" dataframe
+model_results <- rbind(model_results, data.frame(
+  Model = model_type,
+  RMSE = model_metrics["RMSE"],
+  R_Squared = model_metrics["Rsquared"],
+  MAE = model_metrics["MAE"]
+))
+```
+
+```{r, warning = FALSE, messages = FALSE}
+model_metrics
+```
+
+## F. K-Nearest Neighbors (KNN)
+
+```{r, warning = FALSE, messages = FALSE}
+model_type = "KNN"
+
+# Set a seed to today's date
+set.seed(1994)
+
+# KNN Tune Grid
+knn_grid <- expand.grid(
+  .k = 1:20
+)
+
+# Train our model
+knn_model <- train(
+  train_x_with_dummies,
+  train_y,
+  method = "knn",
+  tuneGrid = knn_grid,
+  trControl = global_trcontrol
+)
+
+# Obtain predictions for our model
+model_predictions <- predict(
+  knn_model,
+  newdata = validation_x_with_dummies
+)
+
+# Obtain performance metrics for our trained model on unseen data
+model_metrics <- postResample(
+  model_predictions,
+  validation_y
+)
+
+# Store these results in our "model_results" dataframe
+model_results <- rbind(model_results, data.frame(
+  Model = model_type,
+  RMSE = model_metrics["RMSE"],
+  R_Squared = model_metrics["Rsquared"],
+  MAE = model_metrics["MAE"]
+))
+```
+
+```{r, warning = FALSE, messages = FALSE}
+model_metrics
+```
+
+## G. Random Forest
+
+```{r, warning = FALSE, messages = FALSE}
+model_type = "Random Forest"
+
+# Set a seed to today's date
+set.seed(1994)
+
+# Train our model
+rf_model <- randomForest(
+  train_x,
+  train_y,
+  importance = TRUE,
+  ntress = 1000
+)
+
+# Obtain predictions for our model
+model_predictions <- predict(
+  rf_model,
+  newdata = validation_x
+)
+
+# Obtain performance metrics for our trained model on unseen data
+model_metrics <- postResample(
+  model_predictions,
+  validation_y
+)
+
+# Store these results in our "model_results" dataframe
+model_results <- rbind(model_results, data.frame(
+  Model = model_type,
+  RMSE = model_metrics["RMSE"],
+  R_Squared = model_metrics["Rsquared"],
+  MAE = model_metrics["MAE"]
+))
+```
+
+```{r, warning = FALSE, messages = FALSE}
+model_metrics
+```
+
+## H. Boosted Trees
+
+```{r, warning = FALSE, messages = FALSE}
+model_type = "Boosted Trees"
+
+# Set a seed to today's date
+set.seed(1994)
+
+# Set a tuning grid for our model
+boosted_grid <- expand.grid(
+  .interaction.depth = seq(1, 7, by = 2),
+  .n.trees = seq(100, 1000, by = 50),
+  .shrinkage = c(.01, .1),
+  .n.minobsinnode = seq(1, 15, by = 5)
+)
+
+# Train our model
+boosted_animals <- train(
+  train_x,
+  train_y,
+  method = "gbm",
+  tuneGrid = boosted_grid,
+  trControl = trainControl(method = "cv", allowParallel = TRUE),
+  verbose = FALSE
+)
+
+# Obtain predictions for our model
+model_predictions <- predict(
+  boosted_animals,
+  newdata = validation_x
+)
+
+# Obtain performance metrics for our trained model on unseen data
+model_metrics <- postResample(
+  model_predictions,
+  validation_y
+)
+
+# Store these results in our "model_results" dataframe
+model_results <- rbind(model_results, data.frame(
+  Model = model_type,
+  RMSE = model_metrics["RMSE"],
+  R_Squared = model_metrics["Rsquared"],
+  MAE = model_metrics["MAE"]
+))
+```
+
+```{r, warning = FALSE, messages = FALSE}
+model_metrics
+```
+
+## 10. Cubist
+
+```{r, warning = FALSE, messages = FALSE}
+model_type = "Cubist"
+
+# Set a seed to today's date
+set.seed(1994)
+
+# Train our model
+cubist_model <- train(
+  train_x,
+  train_y,
+  method = "cubist"
+)
+
+# Obtain predictions for our model
+model_predictions <- predict(
+  cubist_model,
+  newdata = validation_x
+)
+
+# Obtain performance metrics for our trained model on unseen data
+model_metrics <- postResample(
+  model_predictions,
+  validation_y
+)
+
+# Store these results in our "model_results" dataframe
+model_results <- rbind(model_results, data.frame(
+  Model = model_type,
+  RMSE = model_metrics["RMSE"],
+  R_Squared = model_metrics["Rsquared"],
+  MAE = model_metrics["MAE"]
+))
+```
+
+```{r, warning = FALSE, messages = FALSE}
+model_metrics
+```
+
+#7. Model Evaluation & Selection
+
+```{r, warning = FALSE, messages = FALSE}
+model_results |>
+  arrange(desc(R_Squared))
+```
+Of all the simulations, Random Forest model has the best $R^2$ among the lowest MAE and RMSE. Across these metrics, it's a fairly obvious choice to use the Random Forest model for our predictions on the provided data
+
+```{r, warning = FALSE, messages = FALSE}
+varImp(rf_model) |>
+  arrange(desc(Overall))
+```
+
+The most important variables were `Brand Code`, closely followed by `Mnf Flow` and `Pressure Vacuum`. Interestingly, `Carb Temp` has a negative overall score. We can get a sense of how well these predictors apply to PH by looking at a correlation plot of the top few predictors:
+
+```{r, warning = FALSE, messages = FALSE}
+top_8_predictors <- varImp(rf_model) |>
+  arrange(desc(Overall)) |>
+  head(8) |>
+  tail(7) |>
+  row.names()
+
+brand_code_vars = c("`Brand Code`A", "`Brand Code`B", "`Brand Code`C", "`Brand Code`D")
+
+train_x_with_dummies |>
+  cbind(train_y) |>
+  rename(
+    PH = train_y
+  ) |>
+  select(
+    c('PH', top_8_predictors, brand_code_vars)
+  ) |>
+  cor() |>
+  corrplot()
+```
+
+From this correlation plot, we can see that there seems to be a relatively strong negative correlation between `Mnf Flow` and the C `Brand Code`.
+
+# 8. Model Forecast
+
+Now that we have our model selected, we will use it to predict the unknown data from ABC Beverage:
+
+```{r, warning = FALSE, messages = FALSE}
+test_y = predict(
+  rf_model,
+  test_x
+)
+```
+
+```{r, warning = FALSE, messages = FALSE}
+# Record the start time
+start_time <- Sys.time()
+
+# Introduce a delay for testing (e.g., 2 seconds)
+Sys.sleep(2)
+
+# Save predictions to a CSV file
+write.csv(
+  cbind(
+    test_y,
+    test_x
+  ) |>
+    rename(
+      prediction = test_y
+    ),
+  "abc_beverage_model_output.csv",
+  row.names = FALSE
+)
+
+# Record the end time
+end_time <- Sys.time()
+
+# Calculate the duration
+duration <- difftime(end_time, start_time, units = "secs")
+total_seconds <- as.numeric(duration)
+
+# Calculate hours, minutes, and seconds as integers
+hours <- as.integer(total_seconds %/% 3600)
+minutes <- as.integer((total_seconds %% 3600) %/% 60)
+seconds <- as.integer(total_seconds %% 60)
+
+# Format the duration as HH:MM:SS
+pretty_duration <- sprintf("Duration: %02d:%02d:%02d", hours, minutes, seconds)
+
+# Print the result
+print(pretty_duration)
+
+```
+Conclusion:
+
+After evaluating several predictive models for estimating the pH levels in ABC Beverage’s manufacturing process, the Random Forest model emerged as the most effective solution. It demonstrated the highest predictive accuracy, achieving an R-squared value of approximately 0.69, with an RMSE of 0.0976 and a MAE of 0.0743. These metrics indicate that the Random Forest model explains 69% of the variability in pH levels and provides robust and reliable predictions.
+
+This success is attributable to the robustness of Random Forest in handling complex, non-linear relationships and its ability to mitigate overfitting through ensemble learning. The model’s performance highlights its potential to provide actionable insights into the manufacturing process. By leveraging key predictors such as "Brand Code," "Manufacturing Flow," and "Pressure Vacuum," the model offers a comprehensive understanding of the variables impacting pH levels.
+
+The preprocessing steps played a crucial role in the model's success. Specifically, techniques like K-Nearest Neighbor (kNN) imputation for missing data and removal of low-variance predictors ensured the dataset was clean and optimized for analysis. Additionally, rigorous cross-validation provided confidence in the model’s generalizability to unseen data.
+
+The results underline the importance of integrating data-driven approaches into manufacturing workflows. The insights generated by the Random Forest model can be used not only to meet regulatory requirements but also to proactively identify and address potential issues in the production process, leading to enhanced operational efficiency and product consistency. Future updates to the model can incorporate new data to further refine its accuracy and applicability.
+
+Results:
+
+Key Findings:
+
+The most influential factors for predicting pH levels included "Brand Code," "Manufacturing Flow," and "Pressure Vacuum," among others.
+
+The data preprocessing steps, including K-Nearest Neighbor (kNN) imputation and removal of low-variance predictors, were instrumental in improving model performance.
+
+Cross-validation and careful hyperparameter tuning across models ensured that the results were generalizable and not overfitted to the training data.
+
+Model Comparisons:
+
+Random Forest: Best performance with R-squared = 0.69.
+
+Cubist Model: Second-best performance with R-squared = 0.66.
+
+Other models (e.g., Neural Networks, Boosted Trees) provided acceptable but less accurate predictions.
+
+Forecast Output:
+
+Predictions for the provided "new" dataset were generated using the Random Forest model and exported to an Excel-readable format. These predictions will assist in regulatory compliance and process optimization.
+
+Recommendations for Next Steps:
+
+Utilize the predictive insights to monitor and adjust manufacturing processes for optimal pH control.
+
+Investigate flagged predictions or anomalies to uncover potential process inefficiencies or deviations.
+
+
