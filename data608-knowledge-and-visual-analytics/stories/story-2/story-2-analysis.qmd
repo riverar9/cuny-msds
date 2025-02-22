@@ -1,0 +1,188 @@
+---
+title: "DATA608 - Richie Rivera - Story 2"
+author: "Richie Rivera"
+date: 2025-02-21
+format:
+    html: default
+execute: 
+  warning: false
+  message: false
+---
+
+First we'll get our data from yahoo finance. I've had issues with getting 25 years of history from the FRED API. To prove that I've tried it, I have code below which will not run that demonstrates how I attempted to access the data
+
+```{r}
+fred_api_working <- FALSE
+
+if (fred_api_working) {
+    library(yaml)
+    library(fredr)
+    
+    # Set up your FRED API key
+    fred_api_key <- yaml.load_file("data608-knowledge-and-visual-analytics/stories/story-2/fred_api.yaml")
+    fredr_set_key(fred_api_key$key)
+    
+    # Retrieve the 'DJIA' series data
+    djia_data <- fredr(
+      series_id = "DJIA",
+      observation_start = as.Date("2000-01-01"),  # Set your desired start date
+      observation_end = as.Date("2025-01-01")     # Set your desired end date
+    )
+    
+    # Print the retrieved data
+    print(djia_data)
+}
+```
+
+A caveat with our data from yahoo finance, we had to shift our 25 year history back to 1996 through 2021 as there was missing data in the DJIA from 2022 onward.
+
+```{r, warnings = FALSE, messages = FALSE}
+library(tidyquant)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(zoo)
+
+tickers = c("DJI","^TNX")
+
+getSymbols(
+    tickers
+    , from = "1995-01-01", to = "2020-12-31"
+    , periodicity="monthly"
+)
+
+UNRATE <- tq_get(
+    "UNRATE", get = "economic.data"
+    , from = "1995-01-01", to = "2020-12-31"
+    , periodicity="monthly"
+) |>
+    select(-symbol)
+
+colnames(UNRATE) <- c("date", "UNRATE")
+```
+
+Now with our data, we'll create a single dataset with all of this information:
+
+```{r}
+kei <- UNRATE |>
+  merge(DJI, by.x = "date", by.y = 0, all = TRUE) |>
+  merge(TNX, by.x = "date", by.y = 0, all = TRUE) |>
+  select(c("date","UNRATE","DJI.Open","TNX.Open"))
+
+head(kei)
+```
+
+Now we'll create some quick plots to see what data changes we need to make
+
+```{r}
+kei_long <- kei |> 
+  pivot_longer(-date, names_to = "variable", values_to = "value") |> 
+  group_by(variable) |> 
+  mutate(value = value / max(replace_na(value, 0) * 100))
+
+ggplot(kei_long, aes(x = date, y = value, color = variable)) +
+  geom_line() +
+  labs(title = "Monthly Key Economic Indicators", x = "Date", y = "Percentage of Max Value", color = "Series") +
+  theme_minimal()
+```
+
+We're going to need to deal with the DJI as it's the only dataset with a few seemingly missing values right before 2020 and one incredibly low value sometime right before 2015.
+
+These values are:
+
+```{r}
+kei |>
+    filter(is.na(DJI.Open) | DJI.Open == min(DJI.Open, na.rm=TRUE))
+```
+
+To fill these values, there area few options we have. We can identify that these follow a bit of a random walk so we can use a naive forecast to fill this data. This is very simply done by using a fill forward:
+
+```{r}
+fill_forward <- function(x) {
+  x[x <= min(x, na.rm = TRUE) | x < 0] <- NA
+  zoo::na.locf(x, na.rm = FALSE)
+}
+
+kei_filled <- kei |>
+  mutate(DJI.Open = fill_forward(DJI.Open))
+
+kei_filled_long <- kei_filled |> 
+  pivot_longer(-date, names_to = "variable", values_to = "value") |> 
+  group_by(variable) |> 
+  mutate(value = value / max(replace_na(value, 0) * 100))
+
+ggplot(kei_filled_long, aes(x = date, y = value, color = variable)) +
+  geom_line() +
+  labs(title = "Naive Monthly Key Economic Indicators", x = "Date", y = "Percentage of Max Value", color = "Series") +
+  theme_minimal()
+```
+
+Now, that we've filled the data, we can see that the time series is continuous and we can use this dataset to create our visualization.
+
+Per the instruction, we need to only use base R:
+
+```{r}
+# Calculate everything as a percentage of the max value
+kei_plots <- kei_filled |>
+  mutate(
+      pct_DJI.Open = DJI.Open/max(DJI.Open),
+      pct_UNRATE = UNRATE/max(UNRATE),
+      pct_TNX.Open = TNX.Open/max(TNX.Open)
+  )
+
+# Create the lines on the graph
+plot(
+    x = kei_plots$date
+    , y=kei_plots$pct_DJI.Open
+    , type = "l"
+    , col = "red"
+    , ylab = "% of Max Value"
+    , xlab= ""
+    , las = 1
+    , xaxt = "n"
+    , yaxt = "n"
+    , ylim = c(0,1)
+)
+lines(
+    x = kei_plots$date
+    , y = kei_plots$pct_UNRATE
+    , col = "green"
+)
+lines(
+    x = kei_plots$date
+    , y = kei_plots$pct_TNX.Open
+    , col = "purple"
+)
+
+# Add a legend
+legend(
+    "top"
+    , legend = c("Dow Jones Ind. Avg.", "Unemployment Rate", "10-Yr Treasury Yield")
+    , col = c("red","green","purple")
+    , lty=1, cex=0.8
+)
+
+# Add a title
+title(
+    "DJI and Unemployment Rate are Inversely Related"
+)
+
+# Format x axis
+date_labels <- as.Date(c("1995-01-01", "2000-01-01", "2005-01-01", "2010-01-01", "2015-01-01", "2020-01-01"))
+
+axis(
+    1
+    , at = date_labels
+    , lab = format(date_labels, "%Y")
+)
+
+# Format y axis with a pct at the end
+axis(
+    2
+    , at = pretty(kei_plots$pct_DJI.Open)
+    , lab = paste0(round(pretty(kei_plots$pct_DJI.Open) * 100, 0), "%")
+    , las = TRUE
+)
+```
+
+From the above graph, we can clearly see that there is an inverse relationship between the unemployment rate and the Dow Jones Industrial Average (DJIA). This makes sense as the stock market is correlated with consumer confidence and consumer confidence decreases as unemployment and other factors of uncertainty increase. Looking at the 10 Year Treasury Yield (TNX), there doesn't appear to be any visible trend between TNX and either the DJIA or the Unemployment rate.
