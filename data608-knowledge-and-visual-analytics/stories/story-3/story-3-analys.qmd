@@ -1,0 +1,84 @@
+---
+title: "Story 3 Analysis"
+Author: "Richie Rivera"
+output: html_document
+---
+
+```{r setup}
+library(dplyr)
+library(ggplot2)
+library(readxl)
+
+# Load the data
+obese <- read_excel("data608-knowledge-and-visual-analytics/stories/story-3/adult-obesity.xlsx")
+names(obese) <- c('rank','state','pct_obese')
+
+spend <- read.csv("data608-knowledge-and-visual-analytics/stories/story-3/2020-healthcare-spending-per-capita.csv")
+names(spend) <- c("state","spend_p_c")
+
+# Merge the data
+df <- obese |>
+    merge(spend, by = "state", all = TRUE)
+
+# Filter out rows where pct_obese is NA
+df <- df |>
+    filter(!is.na(pct_obese)) |>
+    mutate(spend_p_c = as.integer(gsub("\\$", "", spend_p_c)))
+
+# Categorize each state into quintiles based on pct_obese
+df <- df %>%
+  mutate(obesity_quintile = ntile(pct_obese, 5))
+
+head(df)
+```
+
+```{r}
+ggplot(df , aes(x = obesity_quintile, y = spend_p_c, fill = factor(obesity_quintile))) +
+  geom_boxplot() +
+  labs(
+    title = "Obesity Rates vs Healthcare Spending per Capita",
+    x = "",
+    y = 'Healthcare Spending per Capita',
+    fill = 'Obesity Rate Quintile'
+  ) +
+  theme_minimal(base_size = 20) +
+  theme(legend.position = "none") 
+```
+
+```{r}
+library(ggplot2)
+library(ggrepel)
+library(dplyr)
+
+# Identify outliers using IQR rule
+df_outliers <- df %>%
+  group_by(obesity_quintile) %>%
+  mutate(outlier = spend_p_c < quantile(spend_p_c, 0.25) - 1.5 * IQR(spend_p_c) | 
+                   spend_p_c > quantile(spend_p_c, 0.75) + 1.5 * IQR(spend_p_c)) %>%
+  filter(outlier)
+
+ggplot(df, aes(x = factor(obesity_quintile), y = spend_p_c, fill = factor(obesity_quintile))) +
+  geom_boxplot() +  # Show only the boxplot
+  geom_text_repel(
+    data = df_outliers,
+    aes(label = state),
+    size = 7,
+    nudge_y = -0.2,
+    nudge_x = .1
+  ) +
+  labs(
+    title = "State Obesity Rates vs Healthcare Spending per Capita",
+    x = "State Obesity Rate Quintile",
+    y = "Healthcare Spending per Capita"
+  ) +
+    scale_x_discrete(labels = c(
+    "1" = "Bottom 20%", 
+    "2" = "21%-40%", 
+    "3" = "41%-60%", 
+    "4" = "61%-80%", 
+    "5" = "Top 20%"
+  )) +
+  theme_minimal(base_size = 20) +
+  scale_y_continuous(labels = function(x) paste0("$", x / 1000, "K")) +
+  theme(legend.position = "none", panel.grid.major = element_blank()) 
+```
