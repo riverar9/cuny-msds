@@ -1,0 +1,33 @@
+Hey Everyone!
+
+To preface, I read chapter 10 in the version I have which is titled Sustainable Energy Systems. It covers humanities historical energy sources, usage, and environmental impacts. While reading this chapter, I was reminded of a few optimistic trends which showcase that we may be on a course to improve. The first chart below comes from Our World in Data which plots more recent costs per W ($/W) for solar panel prices. It's pretty obvious that it's becoming cheaper and cheaper. Although, it's good to notice that the y-axis is scaled logarithmically, meaning that the decrease in price is more pronounced than the visual may initially imply (down from 1975's $130.70 to $0.31 in 2023, a 99.76% reduction in price).
+
+
+
+Also, to update from where my edition of the text left off, the 2023 total share of solar electricity production was 3.9% which is a significant growth from the 1% that the text said for 2009. Looking back at the chart of Solar panel Prices, in 2009 the $/W in 2009 was $3.06. This is still a whopping 90% reduction in price.
+
+This aligns with an essay from The Economist called Sun Machines: Solar, an energy source that  gets cheaper and cheaper, is going to be huge. This essay details how, in a fast-transition scenario, the makeup of solar and wind can be the majority of energy generation by sometime in the 2030s. It also argues that this is due to a feedback cycle where "industries make more of something, they make it more cheaply. When things get cheaper, demand for them grows. When demand grows, more is made."
+
+This sounds like it can be some hippie mumbo-jumbo, but it seems to align with another trend we're seeing that's detailed in the below visualization:
+
+
+The graphic is really busy (Doc Larry of DATA608 would hate how busy this graph is) but the main takeaway here is that the price of new renewable powerplants are already cheaper than all other alternatives. When it comes to solar, it's commonly pointed out that generating the power is one thing, but we also need to store it. Which is where another trend we've seen can come in which is that the price of lithium-ion batteries fell by 97% since 1991:
+
+
+
+This essay makes a great case for renewable adoption and that there is a reason to be optimistic of renewable energy production in the future. Going back to the text, this does actually have an opportunity to even impact the Uneven Geographical Distribution of Energy that is discussed in the chapter. Although inequities will persist in this future where solar is adopted, there will be a proliferation of where electricity can be most efficiently generated. Taking a quick look at the Global Solar Atlas, we can see that large swaths of Africa, Central Asia, and South America are well geographically positioned to become potential energy generation leaders, selling their relatively cheaply generated solar energy to developing or advanced economies, accelerating their own development. On another, somewhat unrelated note, it's also pretty fortunate that the US has its own large area of incredibly productive solar opportunity in the Arizona & New Mexico areas.
+
+Now with all of this being said, it's noted that there are also some pretty harmful environmental consequences with photovoltaic cells. I was left wanting a little more from the text when it was said that photovoltaic cells "[generate] some hazardous waste from the chemicals and solvents used in processing... [and]  large systems may be placed on land and particularly in deserts where those fragile ecosystems could be damaged". Looking online, I found a cradle-to-grave analysis (remember that from week 1?) from Renewable Energy Hub which goes into some of the details. From the site, China produces 8/10 of all solar panels and that there are a few relatively major contributors to the environment:
+
+Mining of rare earth materials
+Use of hazardous materials in manufacturing
+How far they need to be shipped
+How they are disposed of 
+How they impact land use
+Also from the article, I found that the "carbon footprint of rooftop solar panels is approximately 12 times less than natural gas and 20 times less than coal. Despite these statistics, rooftop solar has a larger carbon footprint than hydro, nuclear, and onshore wind turbines". Although there are no figures for large land area systems, I found it dubious that it's still not an improvement over fossil fuels. Thank you for reading my rant!
+
+I think I'm going to end here, but a few other things I wanted to add in and the reason I didn't:
+
+The increasing efficiency of photovoltaic cells - That chart is crazy and the 3 main types of solar cells (Monocrystalline, Polycrystalline, and Thin-Film) aren't too clearly definable in this graphic. But they're all "going up and to the right"
+An interactive graph showing state by state growth of personal rooftop solar - I was going to say that my dad has been connecting a Texas community with solar but didn't really see how it fit in too well since this is a little micro compared to the above
+The environmental cost of solar is decreasing and there are ways to further decrease it - In the same Renewable Energy Hub article, they discuss how the costs are being and are expected to continue reducing in the future as well as mitigation strategies to address each of the "cost centers".
