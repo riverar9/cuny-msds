@@ -1,0 +1,23 @@
+Hey Everyone!
+
+To recap this week's readings:
+
+Chapter 8 of Stimmel's text brings the relationship of transportation/human services with societies health, economy, and environment and that our ability to leverage data from new, "streaming" data sources, like twitter ( 🙄 X), can be leveraged as data sources to allow planners to identify emerging trends and find new, nuanced city solutions. Bringing up the Hyperloop dredged up a memory of how Elon Musk was quoted by his biographer saying that he brought up the idea to hopefully kill the idea, I presume because his financial interests are in selling cars. Honestly, this sounds pretty on point as Southwest Airlines has been very vocal about opposing high-speed rail in Texas with Herb Kelleher (the former CEO) threatening to move the headquarters to another state if it is built.
+Gordon's text overviews how transportation fuels climate disruption, with on-road emissions accelerating global warming while lacking cooling agents like sulfates. It echoes how car-centric policies aren’t accidental but shaped by corporate interests—think auto industry lobbying against public transit. The paper pushes policy solutions, but without real shifts in priorities, it feels like a Band-Aid on a bullet wound.
+Finally, Forman discusses how roads reshape ecosystems, acting as both conduits and barriers—spreading invasive species while isolating native ones. He highlights their role in pollution, habitat fragmentation, and disrupted water flow. Honestly, it’s wild how much damage roads cause, yet we rarely consider their ecological impact.
+I honestly don't have much to add to these texts, the impact of roads and cars is so well known that it's been plotlines in movies like the doomsday film The Day After Tomorrow or even in Over the Hedge which has the slight difference that this is a suburban community that disrupted the animals' habitat rather than a road.
+
+One thing I was expecting to see in Gordon's text but didn't was how the wear of cars from tire and brake pad abrasion. I must thank our meetup on Wednesday because I've fallen in love with scispace.com and I used it to find analysis and research on this topic (thanks Dan Y and everyone who discussed this!). According to (Giechaskiel et al., 2024), there are 68 mg of tire wear particles (TWP) per kilometer ton (68 mg/km/t). Extrapolating that the DOT estimates that the mean driver drives 13,476 miles per year and that Bloomberg estimates that the average car 3 years ago was over 4,000 pounds, that means that the average driver is depositing 5.9 pounds (thank you for handling the dimensional analysis wolframalpha).
+
+There are articles that go directly to the animal life and environmental impact and how the toxicity of these TWP are eliciting a response from the marine ecosystems that they're found in which is killing life, changing behaviors, increasing stress, and also entering the food-web.
+
+After all of this I'm having a bit of research melancholy so I'm going to stop here. I must say though, I absolutely love SciSpace and I wanted to include a URL to the specific results that obtained but it seems that there isn't a way that I found to share the results.
+
+For anyone who would know a workaround, here's the URL to the specific search/prompt that I used to find a lot of this information.
+
+But if not, my prompt was simply:
+
+Run literature review for "What is the estimated amount of microplastics released from tyre wear and tear in the ocean each year?"
+
+Thank you for reading my discussion post, I hope that it didn't make you as melancholy as it did me.
+
