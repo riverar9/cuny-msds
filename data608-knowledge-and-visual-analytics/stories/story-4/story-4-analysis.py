@@ -70,10 +70,11 @@ for key, value in contains_logic.items():
     clean_df['title'] = clean_df['title'].apply(lambda x: value if key.lower() in x.lower() else x)
 
 # Remove states with less than 10 salaries
-clean_df = clean_df[clean_df.groupby('state')['state'].transform('count') >= 10]
+#clean_df = clean_df[clean_df.groupby('state')['state'].transform('count') >= 10]
 
+clean_df.head()
 # %%
-# Try a visualization for size
+# Try a bar chartvisualization for size
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
@@ -119,4 +120,47 @@ ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f'${x/1000:.0f}K')
 
 plt.tight_layout()
 plt.show()
+# %%
+# Attempt 2, heatmap
+heatmap_df = clean_df.groupby(['title','state']).median().reset_index()
+heatmap_df = heatmap_df.loc[heatmap_df['title'] != 'Management']
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
+from matplotlib.colors import LinearSegmentedColormap
+
+# Pivot the DataFrame for heatmap
+heatmap_data = heatmap_df.pivot(index="state", columns="title", values="sal_avg") / 1000
+
+# Sort by the average salary across all job titles per state
+heatmap_data = heatmap_data.loc[heatmap_data['Data Scientist'].sort_values(ascending=False).index]
+custom_title_order = ['Data Scientist', 'Data Engineer','Data Analyst','Data Consulting']
+heatmap_data = heatmap_data[custom_title_order]
+
+# Custom colormap from magenta (low) to green (high)
+custom_cmap = LinearSegmentedColormap.from_list("magenta_green", ["lightgreen", "darkgreen"])
+
+# Format values as dollar amounts in thousands
+annot_labels = heatmap_data.applymap(lambda x: f"${x:,.0f}K" if pd.notnull(x) else "")
+
+# Plot the heatmap
+plt.figure(figsize=(12, 12))  # Increase height to 12
+ax = sns.heatmap(heatmap_data, cmap=custom_cmap, annot=annot_labels, fmt="", linewidths=0.5)
+
+# Set the colorbar with dollar amounts in thousands
+colorbar = ax.collections[0].colorbar
+colorbar.set_ticks(np.linspace(heatmap_data.min().min(), heatmap_data.max().max(), 5))
+colorbar.set_ticklabels([f"${x:,.0f}K" for x in np.linspace(heatmap_data.min().min(), heatmap_data.max().max(), 5)])
+
+ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
+
+plt.xlabel("Job Title")
+plt.ylabel("State")
+
+plt.xticks(rotation=0)
+plt.yticks(rotation=0)
+
+plt.show()
+
 # %%
