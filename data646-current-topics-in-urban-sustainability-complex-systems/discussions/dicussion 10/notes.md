@@ -75,3 +75,24 @@
     4. Centralize monitoring operations
     5. Engaging the organization - Put the dashboards out where people can see them. They'll start being mindful
     6. Avoid disruptive changes - existing systems don't need to be replaced but new systems can be added to make it better
+
+# Xia
+- Paper is comparing the patterns and data systems that are used in the US and China
+- At the time of writing, the US spends 41% of energy on building while China is using 28%. But at this time, china was rapidly urbanizing.
+- Buildings are one of the largest contributors to climate change
+- Suggests using building energy management systems
+- There isn't a standardized comparision method
+- US Buildings use more energy because they use HVAC more, have more floor area per person, and "higher occupant comfort standards"
+- Suggests having a shared international energy data model so comparisons can be made
+- Improve monitoring infrastructure in China
+
+# Hargreaves
+- Studied how people interact with smart energy home monitoring systems focusing on the social behavioral elements
+- Energy consumption is deeply tied to routines, habits, comfort, and family dynamics.
+- Excitement peaks when they get the system, Over time, that attention waned unless there was continued novelty or practical usefulness.
+- Monitors prompt small behavioral change
+- Use varied by individual motivations, household roles, and levels of interest in energy issues.
+- Real-time and disaggregated feedback (e.g., per appliance) was more engaging.
+- Monitors that were hard to read didn't get much attention.
+- Without broader social or policy support, monitors alone can’t drive major energy savings.
+- Behavior change needs to be embedded in broader systems—infrastructure, community norms, and incentives.
