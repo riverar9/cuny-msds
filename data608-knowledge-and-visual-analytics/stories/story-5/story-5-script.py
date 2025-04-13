@@ -45,6 +45,9 @@ temp_df = temp_df[0].str.split(5*' ', expand=True)
 
 temp_df.columns = ['year','temp_index','smoothed_temp_index']
 
+for temp_col in temp_df.columns:
+    temp_df[temp_col] = pd.to_numeric(temp_df[temp_col])
+
 temp_df
 
 # %%
@@ -59,31 +62,117 @@ with ThreadPoolExecutor() as executor:
 storm_df = pd.concat(storm_dfs)
 # %%
 events_to_keep = [
-    'Tornado'
-    ,'Hurricane'
-    ,'Hurricane (Typhoon)'
-    ,'Marine Hurricane/Typhoon'
-    ,'TORNADO/WATERSPOUT'
-    ,'TORNADOES, TSTM WIND, HAIL'
+    'Tornado',
+    'Hurricane',
+    'Hurricane (Typhoon)',
+    'Marine Hurricane/Typhoon',
+    'TORNADO/WATERSPOUT',
+    'TORNADOES, TSTM WIND, HAIL',
 ]
 
 event_df = storm_df.loc[storm_df['EVENT_TYPE'].isin(events_to_keep)]
 
-# %%
-# Apply scale mapping
-event_df['f_scale'] = event_df['TOR_F_SCALE'].str[-1].astype(int)
-
-ef_scale_mapping = {
-    0: "Light Damage (40 - 72 mph)",
-    1: "Moderate Damage (73 - 112 mph)",
-    2: "Significant damage (113 - 157 mph)",
-    3: "Severe Damage (158 - 206 mph)",
-    4: "Devastating Damage (207 - 260 mph)",
-    5: "Incredible Damage (261 - 318 mph)"
-}
-
-
-
-# %%
 event_df.info(verbose=True, show_counts=True)
+
+# %%
+def parse_damage(value):
+    if pd.isnull(value) or value in ('','K') or isinstance(value, int):
+        return 0
+    value = value.upper().strip()
+    if value.endswith('M'):
+        return float(value[:-1]) * 1e6
+    elif value.endswith('K'):
+        return float(value[:-1]) * 1e3
+    elif value.endswith('B'):
+        return float(value[:-1]) * 1e9
+    else:
+        return float(value)
+    
+event_df['total_damage'] = (event_df['DAMAGE_PROPERTY'].apply(parse_damage) + event_df['DAMAGE_CROPS'].apply(parse_damage)).astype(int)
+
+event_df.head()
+
+# %%
+years_to_keep = 100
+report_df = event_df.loc[event_df['year'] >= datetime.datetime.today().year-years_to_keep][['year','total_damage']]
+
+report_df = report_df.merge(
+    temp_df,
+    on = 'year',
+    how='left'
+)
+
+report_df.head()
+# %%
+viz1_df = report_df.copy()
+viz1_df['temp_bin'] = (viz1_df['temp_index'] // 0.2) * 0.1
+
+viz_x = 'temp_bin'
+
+viz1_df = viz1_df[['year',viz_x]].groupby(viz_x).count().reset_index().rename(columns={'year':'storm_count'}).merge(
+    viz1_df[['year',viz_x]].drop_duplicates().groupby(viz_x).count().reset_index().rename(columns={'year':'years_at_temp'}),
+    on = viz_x
+)
+
+viz1_df['avg_yrly_storms'] = viz1_df['storm_count']/viz1_df['years_at_temp']
+
+
+sns.lineplot(
+    data=viz1_df,
+    x='temp_bin',
+    y='avg_yrly_storms',
+    color='#FF6D00',  # teal-green line like in image
+    linewidth=3,
+    marker='o'
+)
+
+# Style adjustments to match the image
+plt.title("Storm Frequency by Temperature Increase", fontsize=24, fontweight='bold', loc='left', color='#7a695a')
+plt.xlabel("Temperature Increase (°C)", fontsize=14)
+plt.ylabel("Average Yearly Storms", fontsize=14)
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
+plt.grid(False)
+plt.gca().spines[['top', 'right']].set_visible(False)
+plt.gca().set_facecolor('#f2f2f2')      # plot area
+plt.gcf().set_facecolor('#f2f2f2')      # entire figure
+plt.tight_layout()
+plt.show()
+# %%
+import matplotlib.ticker as ticker
+viz2_df = report_df.copy()
+viz2_df['temp_bin'] = (viz2_df['temp_index'] // 0.2) * 0.1
+
+viz_x = 'temp_bin'
+
+viz2_df = viz2_df[['total_damage',viz_x]].groupby(viz_x).mean().reset_index().merge(
+    viz2_df[['year',viz_x]].drop_duplicates().groupby(viz_x).count().reset_index().rename(columns={'year':'years_at_temp'}),
+    on = viz_x
+)
+
+viz2_df['avg_storm_intensity'] = viz2_df['total_damage']/viz2_df['years_at_temp']
+
+
+sns.lineplot(
+    data=viz2_df,
+    x=viz_x,
+    y='avg_storm_intensity',
+    color='#00BFAE',  # teal-green line like in image
+    linewidth=3,
+    marker='o'
+)
+
+# Style adjustments to match the image
+plt.title("Storm Severity by Temperature Increase", fontsize=24, fontweight='bold', loc='left', color='#7a695a')
+plt.xlabel("Temperature Increase (°C)", fontsize=14)
+plt.ylabel("Average Damage per Storm\n(Millions USD)", fontsize=14)
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
+plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'${x/1e6:.1f}B'))
+plt.grid(False)
+plt.gca().spines[['top', 'right']].set_visible(False)
+plt.gca().set_facecolor('#f2f2f2')      # plot area
+plt.gcf().set_facecolor('#f2f2f2')      # entire figure
+plt.tight_layout()
+plt.show()
 # %%
