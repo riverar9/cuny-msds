@@ -2,6 +2,7 @@
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
+from matplotlib.lines import Line2D
 # %%
 data = {
     "Employee ID": list(range(1, 21)),
@@ -17,50 +18,74 @@ data = {
 
 df = pd.DataFrame(data)
 
+df['Change'] = df['Post-Training'] - df['Pre-Training']
+
 df.head()
 # %%
 df_melted = df.melt(
-    id_vars='Employee ID', 
-    var_name='Stage',
-    value_name='Productivity'
+    id_vars=['Employee ID', 'Change'],
+    var_name='Stage',        
+    value_name='Productivity',
+    value_vars=['Pre-Training', 'Post-Training'] 
 )
+
 df_melted.head()
 # %%
-plt.figure(figsize=(8, 6))
-sns.set_style("whitegrid")
-sns.boxplot(data=df_melted, x="Stage", y="Productivity", palette=['white','white'], width=0.5)
-sns.despine()
 
-plt.title("Productivity Before vs After Training", fontsize=14, weight='bold')
-plt.xlabel("")
+plt.figure(figsize=(8, 10))
+
+sns.lineplot(
+    data=df_melted,
+    x='Stage',          
+    y='Productivity',   
+    units='Employee ID',
+    estimator=None,     
+    color='darkgrey',   
+    marker=None,        
+    linewidth=1.5,      
+    alpha=0.6,          
+    sort=False          
+)
+
+plt.scatter(
+    x=['Pre-Training'] * len(df), 
+    y=df['Pre-Training'],         
+    s=60,                         
+    color='skyblue',              
+    label='Pre-Training',         
+    zorder=3                      
+)
+
+colors = ['red' if change < 0 else 'yellow' if change == 0 else 'lightgreen' for change in df['Change']]
+
+plt.scatter(
+    x=['Post-Training'] * len(df), 
+    y=df['Post-Training'],         
+    s=60,                          
+    color=colors,                  
+    zorder=3                       
+)
+
+plt.title("Employee Productivity Change: Pre vs Post Training", fontsize=16, weight='bold', pad=20)
+plt.xlabel("Training Stage", fontsize=12)
 plt.ylabel("Productivity Score", fontsize=12)
+
 plt.xticks(fontsize=11)
 plt.yticks(fontsize=11)
+
 plt.grid(False)
-plt.tight_layout()
-plt.show()
-# %%
-bar_width = 0.35
-index = df["Employee ID"]
 
-plt.bar(index - bar_width / 2, df["Pre-Training"], bar_width, label='Pre-Training', color='orange')
-plt.bar(index + bar_width / 2, df["Post-Training"], bar_width, label='Post-Training', color='green')
+custom_lines = [
+    Line2D([0], [0], marker='o', color='w', markerfacecolor='skyblue', markersize=8, label='Pre-Training Score'),
+    Line2D([0], [0], marker='o', color='w', markerfacecolor='lightgreen', markersize=8, label='Post-Training (Improved/Same)'),
+    Line2D([0], [0], marker='o', color='w', markerfacecolor='red', markersize=8, label='Post-Training (Decreased)')
+]
 
-# Average line plot to show the trend
-average_pre = df["Pre-Training"].mean()
-average_post = df["Post-Training"].mean()
+plt.legend(handles=custom_lines, title="Score Type") # Place legend automatically
 
-plt.axhline(y=average_pre, color='orange', linestyle='--', label=f"Avg Pre-Training ({average_pre:.2f})")
-plt.axhline(y=average_post, color='green', linestyle='--', label=f"Avg Post-Training ({average_post:.2f})")
-
-# Customizing the plot
-plt.title("Productivity Changes Pre- and Post-Training", fontsize=14)
-plt.xlabel("Employee ID")
-plt.ylabel("Productivity Score")
-plt.xticks(index, index)
-plt.legend()
 plt.tight_layout()
 
-# Show plot
+
 plt.show()
+
 # %%
