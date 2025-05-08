@@ -1,0 +1,17 @@
+Hey Everyone!
+
+This week’s readings highlighted massive public health challenges, from pollution to climate change, but also offered perspectives on tackling them with sustainable and equitable solutions.
+
+Gustavo Garza's piece on Mexico City's air pollution was a stark reminder of environmental neglect. That pollution measurement only began in 1986 powerfully illustrates "shifting baseline syndrome." This late start likely means our understanding of the true historical air quality loss is trivialized, as we measure against an already degraded "normal." Each generation risks underestimating past changes. Think of the American Chestnut: largely absent for generations due to blight, its absence has shifted our baseline for healthy forests and urban treescapes. Efforts like NYC Parks' "1000 Chestnut Challenge" aim to recalibrate this, underscoring how much ecological memory can be lost and how vital Garza's warning for strict policies is when our perception of 'normal' adapts downwards so readily.
+
+This connects to Frumkin & McMichael’s call for a public health response to climate change. Their framework of prevention and adaptation using the 10 Essential Public Health Services provides a roadmap. The emphasis on monitoring, diagnosing, and policy development is crucial. As data science students, systematic measurement and ongoing monitoring really resonate, since without robust data, acknowledging shifting baselines is harder, and we risk flying blind.
+
+The scale of challenges like climate change also highlights rapidly shifting intergenerational baselines. My parents' environment differs vastly from today's. I worry common resources now, like tuna, could become 'fairy tales' for my children. Mark Kurlansky’s book on cod illustrates this: once prolific, cod was fished to near collapse. Now, its scarcity and higher price are largely accepted, our baseline for an 'abundant' fishery drastically altered, often without recognizing the historical loss. This normalization of depleted states is a major hurdle for motivating long-term environmental action.
+
+This context leads to Pluye et al.'s concept of sustainability in public health programs. Their compelling argument is that sustainability isn't an afterthought but must be woven in from the start. "Routinization" within organizations and "standardization" with broader policies are key to "high" sustainability. This approach is vital if we're to combat shifting baselines with lasting changes, not just temporary fixes like Garza warned against.
+
+On a local level, Twiss et al. on community gardens and Garcia on urban green space showed tangible interventions. While community gardens offer clear health and community benefits, Garcia’s piece on making cities "just green enough" adds a crucial complexity. The "eco-gentrification" paradox, where greening efforts displace intended beneficiaries, shows we need strategies promoting social equity alongside ecological health, forcing critical thought on the how and for whom of urban health initiatives.
+
+Ultimately, these readings show effective public health action needs a multi-pronged approach: addressing large-scale threats with strong policies, consciously countering the normalization of degraded environments (the shifting baseline), ensuring program sustainability, and fostering community initiatives while actively mitigating social inequities. It's a complex interplay reminding us there are rarely simple fixes.
+
+Thanks for reading my thoughts this week!

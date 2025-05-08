@@ -1,0 +1,25 @@
+Hi everyone!
+
+Full disclosure, I was unable to find the Heller, Chelleri and Walker pieces for this week's readings. I also just realized that I didn't read the Heller piece and accidentally read Sustainability outcomes of the United States food system: A systematic review by C. B. Knox and Shelie A. Miller. It turns out that I read this paper since Heller & Keoleian was cited so often in the paper!
+
+That being said, the remaining pieces:
+
+    Gould, K. A., & Lewis, T. L.'s discussion on the inequalities of how environmental "goods" and "bads" are distributed to people once they're created. The piece also being about Prospect Park (shoutout to anyone who went yesterday to celebrate our first 80 degree day) made it really relatable! I also felt very seen since there was a line about the Park Slope Food Coop in there!
+    Pire's piece on NYC's water supply system made it apparent how precarious the city's water supply is. I was exposed to how interesting and fortunate NYC is with it's water system through an educational video I've seen but it's not something to take for granted as the article reminded me of how in some place, like Phoenix, there is no running water in a growing number of homes.
+
+I figure since I read the systematic review, I should spend more time on this one. It's pretty recent (submitted in December 2020 and published in May 2022) and the review was done on 49 articles which were to have one or more of 93 different outcomes. Each of the outcomes were further categorized into environmental, socio-economic, and health families of outcomes. With the categorization complete, there were some major findings such as the general under representation of socio-economic outcomes on the topic and that no single article identified outcomes from each family of outcomes.
+
+One of the more interesting outcomes is the "food system outcome web" that was created. It's pasted below but is essentially a flow chart of the different outcomes and how they're interconnected (a legend below). What I find most interesting are the instances where outcomes of one family lead to outcomes of another. For example:
+
+    The Food System affects 
+    The environment by using resources which affects
+    Socio-economic outcomes by adding to food security risks which can lead to worsening
+    Socio-economic outcomes by creating situations of food insecurity which leads to worse
+    Human health outcomes through poor health due to a poor diet which furthers
+    Socio-economic outcomes through inequalities...
+
+And this cycle could go on forever. I've been lost in following the feedback loops that the diagram presents.
+
+    Orange = Socio-Economic Outcomes
+    Green = Environmental Outcomes
+    Grey = Human Health Outcomes.
