@@ -1,0 +1,33 @@
+# DATA 622 lecture 1
+
+- instructor is Joseph Sabelja
+- Classes will be recorded and posted online
+- Textbooks
+    - We have a choice to choose the R path or the Python path
+    - The python version focuses in PyTorch (which is pretty much dominant)
+    - Books are like $30-40 each, I may as well get it tbh
+    - Textbooks versions aren't very different from eachother
+- We have some other material that we can grab
+    - the first 2 are kinda similar
+- In the reading material, there's an indication to pick if you're going on the R or python track
+    - these are deliminated with prefixed with R or Python
+- Quizzes are simple and quick to incentivize reading and understanding
+    - multiple choice
+    - you did one in like 5 mins bro
+    - they're timed for 30 mins
+- We have only one break during thanksgiving
+    - so there's a reading and supplemental material
+- Phones/Portable devices and cheap GPUs made deep learning possible
+    - before that (12 years ago-ish), it wasn't really useful
+- Reinforcement Learning - 
+    - he brought up how unsupervised and superviesed is stateless
+        - IE, every new datapoint doesn't pay attention to the previous ones
+    - reinforcement is not stateless, it depends on a sequence of decicions
+    - it requires a "reward" to reinforce actions
+    - "Model takes actions in the enviornment then received state updates and feedback"
+    - This'll be less discussed as it's "its own course"
+- unsupervised helps with clustering which'll give us an idea of what we should investigate
+- "you usually track anomolies with unsupervised learning and then used supervised learning to predict"
+- Artificial General Intelligence (AGI)
+    - Defined as "Intelligence measures an agent's ability to achieve goals in a wide range of environments"
+    - Narrow AI - a model/AI that is specific to the datatype and problem
