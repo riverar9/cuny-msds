@@ -1,0 +1,1 @@
+Work in this class is collaborative. Our collaboration repository can be found at https://github.com/naomibuell/DATA621
