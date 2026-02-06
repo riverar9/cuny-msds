@@ -1,0 +1,1 @@
+This project is in collaboration with Naomi. This can be found at https://github.com/riverar9/data698-master-research-project
